@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 function main() {
     const canvas = document.querySelector('#main_canvas');
@@ -12,6 +13,9 @@ function main() {
     const far    = 1000;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     camera.position.z = 15;
+
+    // Controls setup
+    const controls = new OrbitControls(camera, renderer.domElement);
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -30,6 +34,14 @@ function main() {
     light.position.set(-1, 2, 4);
     scene.add(light);
 
+    // Orientation markers setup - Used for development
+    const markerX_geometry = new THREE.BoxGeometry(100, 0.1, 0.1);
+    const markerY_geometry = new THREE.BoxGeometry(0.1, 100, 0.1);
+    const markerZ_geometry = new THREE.BoxGeometry(0.1, 0.1, 100);
+    createMesh(markerX_geometry, 0xff0000, scene, {}); // X - red
+    createMesh(markerY_geometry, 0x08ff00, scene, {}); // Y - green
+    createMesh(markerZ_geometry, 0x0400ff, scene, {}); // Z - blue
+
     // Sphere setup
     const sphere_geometry = new THREE.SphereGeometry(0.9, 75, 75);
     const sphere = createMesh(sphere_geometry, 0xFF9B2A, scene, {});
@@ -37,9 +49,8 @@ function main() {
     // Floor setup
     const floor_geometry = new THREE.PlaneGeometry(100, 100);
     const floor_data = {
-        z: -5,
-        y: -1,
-        rotX: -Math.PI/3
+        y: -2,
+        rotX: Math.PI/2
     };
     const floor = createMesh(floor_geometry, 0xFFFFFF, scene, floor_data);
 
@@ -60,7 +71,8 @@ function main() {
         scene, 
         {x = 0, y = 0, z = 0, rotX = 0, rotY = 0, rotZ = 0}
     ) {
-        const material = new THREE.MeshPhongMaterial({ color });
+        // TODO: Select material?
+        const material = new THREE.MeshPhongMaterial({ color, side: THREE.DoubleSide });
         const mesh = new THREE.Mesh(geometry, material);
         
         // Check for empty obj
@@ -110,7 +122,9 @@ function main() {
             camera.aspect = canvas.clientWidth / canvas.clientHeight;
             camera.updateProjectionMatrix();
         }
-
+        
+        controls.update();
+        
         renderer.render(scene, camera);
 
         requestAnimationFrame(render)
