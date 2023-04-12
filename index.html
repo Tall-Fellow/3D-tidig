@@ -1,0 +1,18 @@
+<head>
+    <title>3D - Tidig</title>
+    <link href="/main.css" rel="stylesheet" />
+    <!-- Get polyfill for importmap since support is lack-luster in certain browsers -->
+    <script async src="https://unpkg.com/es-module-shims@1.7.1/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@v0.151.3/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@v0.151.3/examples/jsm/"
+        }
+      }
+    </script>
+</head>
+<body>
+    <canvas id="main_canvas"></canvas>
+    <script type="module" src="/main.js"></script>
+</body>
