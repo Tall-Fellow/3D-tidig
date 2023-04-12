@@ -10,9 +10,11 @@ function main() {
     const fov    = 75;
     const aspect = 2;
     const near   = 0.1;
-    const far    = 1000;
+    const far    = 100;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.z = 15;
+    camera.position.z = 30;
+    camera.up.set(0, 1, 0); // Set camera up direction, needed for lookAt()
+    camera.lookAt(0, 0, 0); // Point camera towards origo
 
     // Controls setup
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -23,72 +25,56 @@ function main() {
     // {
     //     const color = 0x192633;
     //     const near  = 10;
-    //     const far   = 100;
+    //     const far   = 50;
     //     scene.fog = new THREE.Fog(color, near, far);
     // }
 
     // Light setup
     const color = 0xFFFFFF;
-    const intensity = 1;
+    const intensity = 0.5;
     const light = new THREE.DirectionalLight(color, intensity);
     light.position.set(-1, 2, 4);
     scene.add(light);
 
     // Orientation markers setup - Used for development
-    const markerX_geometry = new THREE.BoxGeometry(100, 0.1, 0.1);
-    const markerY_geometry = new THREE.BoxGeometry(0.1, 100, 0.1);
-    const markerZ_geometry = new THREE.BoxGeometry(0.1, 0.1, 100);
-    createMesh(markerX_geometry, 0xff0000, scene, {}); // X - red
-    createMesh(markerY_geometry, 0x08ff00, scene, {}); // Y - green
-    createMesh(markerZ_geometry, 0x0400ff, scene, {}); // Z - blue
+    {
+        const X_geometry = new THREE.BoxGeometry(100, 0.1, 0.1);
+        const Y_geometry = new THREE.BoxGeometry(0.1, 100, 0.1);
+        const Z_geometry = new THREE.BoxGeometry(0.1, 0.1, 100);
+        const X_material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const Y_material = new THREE.MeshBasicMaterial({ color: 0x08ff00 });
+        const Z_material = new THREE.MeshBasicMaterial({ color: 0x0400ff });
+        
+        scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
+        scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
+        scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
+    }
 
     // Sphere setup
-    const sphere_geometry = new THREE.SphereGeometry(0.9, 75, 75);
-    const sphere = createMesh(sphere_geometry, 0xFF9B2A, scene, {});
+    const sphere_geometry = new THREE.SphereGeometry(4, 8, 8);
+    const sphere_material = new THREE.MeshPhongMaterial({ emissive: 0xFF9B2A });
+    const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
+    scene.add(sphere);
 
-    // Floor setup
-    const floor_geometry = new THREE.PlaneGeometry(100, 100);
-    const floor_data = {
-        y: -2,
-        rotX: Math.PI/2
-    };
-    const floor = createMesh(floor_geometry, 0xFFFFFF, scene, floor_data);
-
-    /**
-     * Creates a mesh and adds to a scene with optional position and rotation data.
-     * 
-     * @param {THREE.Geometry} geometry - Any type of Three.js geometry.
-     * @param {HEX} color - As HEX, e.g. 0xFFFFFF.
-     * @param {THREE.Scene} scene - The Three.js scene object to add the mesh to.
-     * @param {Object} data - Position and rotation data, defaults to 0 
-     * for all if empty obj is provided.
-     * 
-     * @returns the created mesh object.
-     */
-    function createMesh(
-        geometry, 
-        color,
-        scene, 
-        {x = 0, y = 0, z = 0, rotX = 0, rotY = 0, rotZ = 0}
-    ) {
-        // TODO: Select material?
-        const material = new THREE.MeshPhongMaterial({ color, side: THREE.DoubleSide });
-        const mesh = new THREE.Mesh(geometry, material);
-        
-        // Check for empty obj
-        if (Object.keys(arguments[3]).length > 0) {   
-            mesh.position.x = x;
-            mesh.position.y = y;
-            mesh.position.z = z;
-            mesh.rotation.x = rotX;
-            mesh.rotation.y = rotY;
-            mesh.rotation.z = rotZ;
-        }
-        
-        scene.add(mesh);
-
-        return mesh;
-    }
+    // Card test
+    const card_geometry = new THREE.PlaneGeometry(2, 3);
+    const card_material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
+    const card = new THREE.Mesh(card_geometry, card_material);
+    const card2 = new THREE.Mesh(card_geometry, card_material);
+    const card3 = new THREE.Mesh(card_geometry, card_material);
+    const card4 = new THREE.Mesh(card_geometry, card_material);
+    card.position.x = 7;
+    card2.position.x = -7;
+    card3.position.z = 7;
+    card4.position.z = -7;
+    card.rotation.y = Math.PI/2;
+    card2.rotation.y = Math.PI/2;
+    card3.rotation.y = Math.PI/2;
+    card4.rotation.y = Math.PI/2;
+    sphere.add(card);
+    sphere.add(card2);
+    sphere.add(card3);
+    sphere.add(card4);
 
     /**
      * Resizes canvas if needed, fixes blocky rendering issues.
@@ -112,9 +98,8 @@ function main() {
      * Recursively renders the scene,
      * updates camera aspect with screen changes.
      */
-    function render() {
-        sphere.rotation.x -= 0.010; // Temp
-        sphere.rotation.y -= 0.010; // Temp
+    function render(time) {
+        time *= 0.001;
 
         // Camera only needs to be updated if canvas size is changed
         if (resizeRendererToDisplaySize(renderer)) {   
@@ -122,6 +107,12 @@ function main() {
             camera.aspect = canvas.clientWidth / canvas.clientHeight;
             camera.updateProjectionMatrix();
         }
+
+        sphere.rotation.y = time;
+        card.rotation.y = -time;
+        card2.rotation.y = -time;
+        card3.rotation.y = -time;
+        card4.rotation.y = -time;
         
         controls.update();
         
