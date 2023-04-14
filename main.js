@@ -1,6 +1,33 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+class CardMesh extends THREE.Mesh {
+    constructor(geometry, material, max_speed, allowed_deviation) {
+        super(geometry, material);
+        this.orgPosY           = this.position.y;
+        this.allowed_deviation = allowed_deviation;
+        this.max_speed         = max_speed;
+        this.speed             = max_speed * Math.random();
+        this._setDirection(0.5);
+    }
+
+    _setDirection(chance = 0.005) {
+        this.speed *= Math.random() < chance ? -1 : 1;
+        console.log(this.speed);
+    }
+
+    updatePos(delta = 0) {
+        this.position.y += this.speed;
+        this.rotation.y = delta;
+
+        if (Math.abs(this.position.y - this.orgPosY) > this.allowed_deviation) {
+            this.position.y -= this.speed;
+        }
+
+        this._setDirection();
+    }
+}
+
 function main() {
     const canvas = document.querySelector('#main_canvas');
     // Takes data and renders onto canvas
@@ -31,9 +58,9 @@ function main() {
 
     // Light setup
     const color = 0xFFFFFF;
-    const intensity = 0.5;
+    const intensity = 0.6;
     const light = new THREE.DirectionalLight(color, intensity);
-    light.position.set(-1, 2, 4);
+    light.position.set(-1, 4, 6);
     scene.add(light);
 
     // Orientation markers setup - Used for development
@@ -51,30 +78,65 @@ function main() {
     }
 
     // Sphere setup
-    const sphere_geometry = new THREE.SphereGeometry(4, 8, 8);
+    const sphere_geometry = new THREE.SphereGeometry(4, 64, 64);
     const sphere_material = new THREE.MeshPhongMaterial({ emissive: 0xFF9B2A });
     const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
     scene.add(sphere);
 
-    // Card test
-    const card_geometry = new THREE.PlaneGeometry(2, 3);
-    const card_material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
-    const card = new THREE.Mesh(card_geometry, card_material);
-    const card2 = new THREE.Mesh(card_geometry, card_material);
-    const card3 = new THREE.Mesh(card_geometry, card_material);
-    const card4 = new THREE.Mesh(card_geometry, card_material);
-    card.position.x = 7;
-    card2.position.x = -7;
-    card3.position.z = 7;
-    card4.position.z = -7;
-    card.rotation.y = Math.PI/2;
-    card2.rotation.y = Math.PI/2;
-    card3.rotation.y = Math.PI/2;
-    card4.rotation.y = Math.PI/2;
-    sphere.add(card);
-    sphere.add(card2);
-    sphere.add(card3);
-    sphere.add(card4);
+    // Fetch images for cards and generate them
+    const cards = generateCards([0, 1, 2, 3, 4, 5, 6, 7, 8], 6, sphere);
+
+    /**
+     * Creates a card for-each image url in imgArr and 
+     * uniformly distributes them around the parent at a set radius.
+     * 
+     * @param {Object[]}  imgArr - Array of image urls.
+     * @param {Number} radius - Orbit radius, from parent center to card center.
+     * @param {*} parent - Parent element, must have add() function.
+     * @returns array of generated cards
+     */
+    function generateCards(imgArr, radius, parent) {
+        const angleOffset = 2*Math.PI / imgArr.length;
+        const cards = [];
+        for (let i = 0; i < imgArr.length; i++) {
+            const geometry = getRoundedEdgePlaneGeometry(2, 3 , 0.6);
+            const material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
+            const card = new CardMesh(geometry, material, 0.01, 4);
+
+            // Position all cards around the parent uniformly
+            card.position.z = radius * Math.cos(i * angleOffset);
+            card.position.x = radius * Math.sin(i * angleOffset);
+
+            cards.push(card);
+            parent.add(card);
+        };
+
+        return cards;
+    }
+
+    /**
+     * Creates a flat 2D plane with rounded edges.
+     * 
+     * @author Liron Toledo, with minor changes by Jesper J. Oskarsson
+     * @see https://stackoverflow.com/questions/65567873/create-a-plane-with-curved-edges-using-planegeometry-three-js
+     */
+    function getRoundedEdgePlaneGeometry(width, height, radius) {
+        const x = -width/2;
+        const y = -height/2;
+
+        const shape = new THREE.Shape();
+        shape.moveTo(x, y + radius);
+        shape.lineTo(x, y + height - radius);
+        shape.quadraticCurveTo(x, y + height, x + radius, y + height);
+        shape.lineTo(x + width - radius, y + height);
+        shape.quadraticCurveTo(x + width, y + height, x + width, y + height - radius);
+        shape.lineTo(x + width, y + radius);
+        shape.quadraticCurveTo(x + width, y, x + width - radius, y);
+        shape.lineTo(x + radius, y);
+        shape.quadraticCurveTo(x, y, x, y + radius);
+
+        return new THREE.ShapeGeometry(shape);
+    }
 
     /**
      * Resizes canvas if needed, fixes blocky rendering issues.
@@ -99,7 +161,7 @@ function main() {
      * updates camera aspect with screen changes.
      */
     function render(time) {
-        time *= 0.001;
+        time *= 0.0001;
 
         // Camera only needs to be updated if canvas size is changed
         if (resizeRendererToDisplaySize(renderer)) {   
@@ -109,10 +171,9 @@ function main() {
         }
 
         sphere.rotation.y = time;
-        card.rotation.y = -time;
-        card2.rotation.y = -time;
-        card3.rotation.y = -time;
-        card4.rotation.y = -time;
+        cards.forEach(card => {
+            card.updatePos(-time);
+        });
         
         controls.update();
         
