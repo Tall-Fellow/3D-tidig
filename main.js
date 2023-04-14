@@ -2,29 +2,45 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 class CardMesh extends THREE.Mesh {
-    constructor(geometry, material, max_speed, allowed_deviation) {
+    constructor(geometry, material, max_speed, allowed_deviation, acceleration) {
         super(geometry, material);
         this.orgPosY           = this.position.y;
         this.allowed_deviation = allowed_deviation;
-        this.max_speed         = max_speed;
-        this.speed             = max_speed * Math.random();
-        this._setDirection(0.5);
+        this.max_speed         = max_speed * Math.random();
+        this.speed             = 0;
+        this.acceleration      = acceleration;
+        this._changeDirection(0.5);
     }
 
-    _setDirection(chance = 0.005) {
-        this.speed *= Math.random() < chance ? -1 : 1;
-        console.log(this.speed);
+    _changeDirection(chance = 0.005) {
+        const change = Math.random() < chance;
+        if (change) {
+            this.acceleration *= -1;
+        }
     }
 
-    updatePos(delta = 0) {
-        this.position.y += this.speed;
-        this.rotation.y = delta;
-
+    updatePos(rot_pos_X = 0) {
+        this.rotation.y = rot_pos_X;
+        
         if (Math.abs(this.position.y - this.orgPosY) > this.allowed_deviation) {
             this.position.y -= this.speed;
+            this.speed = 0;
+        }
+        
+        else {
+            this.position.y += this.speed;
         }
 
-        this._setDirection();
+        this._changeDirection();
+
+        if (Math.abs(this.speed) > this.max_speed) {
+            const d = this.speed < 0 ? -1 : 1; // Keep direction of travel
+            this.speed = this.max_speed * d;
+        } 
+        
+        else {
+            this.speed += this.acceleration;
+        }
     }
 }
 
@@ -84,7 +100,7 @@ function main() {
     scene.add(sphere);
 
     // Fetch images for cards and generate them
-    const cards = generateCards([0, 1, 2, 3, 4, 5, 6, 7, 8], 6, sphere);
+    const cards = generateCards([0, 1, 2, 3, 4, 5 ,6], 6, sphere);
 
     /**
      * Creates a card for-each image url in imgArr and 
@@ -101,7 +117,7 @@ function main() {
         for (let i = 0; i < imgArr.length; i++) {
             const geometry = getRoundedEdgePlaneGeometry(2, 3 , 0.6);
             const material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
-            const card = new CardMesh(geometry, material, 0.01, 4);
+            const card = new CardMesh(geometry, material, 0.05, 3.5, 0.0001);
 
             // Position all cards around the parent uniformly
             card.position.z = radius * Math.cos(i * angleOffset);
@@ -161,7 +177,7 @@ function main() {
      * updates camera aspect with screen changes.
      */
     function render(time) {
-        time *= 0.0001;
+        time *= 0.001; // Time since render start in seconds, cumulative
 
         // Camera only needs to be updated if canvas size is changed
         if (resizeRendererToDisplaySize(renderer)) {   
@@ -170,9 +186,9 @@ function main() {
             camera.updateProjectionMatrix();
         }
 
-        sphere.rotation.y = time;
+        sphere.rotation.y = time*0.1;
         cards.forEach(card => {
-            card.updatePos(-time);
+            card.updatePos(-time*0.1);
         });
         
         controls.update();
