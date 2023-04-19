@@ -11,10 +11,19 @@ class Orbit {
      * @param {*} center_obj - Object to orbit around.
      * @param {*} radius - Radius from center at which entities will orbit.
      */
-    constructor(center_obj, radius) {
+    constructor(radius, center_obj) {
+        this.radius     = radius;
         this.center_obj = center_obj;
-        this.radius = radius;
-        this.entities = [];
+        this.entities   = [];
+        this.center     = new THREE.Group();
+        this.center.add(center_obj);
+    }
+
+    /**
+     * @returns THREE.Group representing the orbit system
+     */
+    getGroup() {
+        return this.center;
     }
 
     /**
@@ -39,7 +48,7 @@ class Orbit {
         entity.position.z = this.radius * Math.cos(angle);
         entity.position.x = this.radius * Math.sin(angle);
 
-        this.center_obj.add(entity);
+        this.center.add(entity);
         this.entities.push(entity);
     }
 
@@ -50,8 +59,8 @@ class Orbit {
      * @param {number} rotation - An angle in radians, set the rotation of the central object and entities.
      * @param {boolean} counter_rotate - If 'true', orbit entities rotation is canceled (not central object though).
      */
-    update(rotation, counter_rotate = false) {
-        this.center_obj.rotation.y = rotation;
+    update(rotation, counter_rotate = false) { 
+        this.center.rotation.y = rotation;
         this.entities.forEach(entity => {
             try {
                 entity.update();
@@ -182,19 +191,20 @@ function main() {
         scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
         scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
     }
-
-    // Sphere setup
+    
+    // Orbit and cards setup
     const sphere_geometry = new THREE.SphereGeometry(4, 64, 64);
     const sphere_material = new THREE.MeshPhongMaterial({ emissive: 0xFF9B2A });
     const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
-    scene.add(sphere);
 
-    // Orbit and cards setup
-    const orbit = new Orbit(sphere, 6);
+    const orbit = new Orbit(6, sphere);
+
     const cards = generateCards([0, 1, 2, 3, 4, 5, 6], 6, sphere);
     cards.forEach(card => {
         orbit.add(card, 0, true);
     });
+
+    scene.add(orbit.getGroup());
 
     /**
      * Creates a card for-each image url in imgArr and 
