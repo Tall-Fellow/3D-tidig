@@ -1,7 +1,89 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+/**
+ * Class representing a perfect circular orbit around a single central object.
+ */
+class Orbit {
+    /**
+     * Create a orbit.
+     * 
+     * @param {*} center_obj - Object to orbit around.
+     * @param {*} radius - Radius from center at which entities will orbit.
+     */
+    constructor(center_obj, radius) {
+        this.center_obj = center_obj;
+        this.radius = radius;
+        this.entities = [];
+    }
+
+    /**
+     * Adds a new item to the orbit.
+     * 
+     * @param {*} entity - The entity which will be added to the orbit. 
+     * @param {number} angle - The angle in radians where the entity will be placed.
+     * @param {boolean} redistribute_all - Set to 'true' to uniformly redistribute all existing items in the orbit.
+     */
+    add(entity, angle = 0, redistribute_all = false) {
+        if (redistribute_all) {
+            // Position all existing entities around the parent uniformly with space for the new entity
+            const angleOffset = 2*Math.PI / (this.entities.length + 1);
+
+            for (let i = 0; i < this.entities.length; i++) {                
+                this.entities[i].position.z = this.radius * Math.cos(angle + (i+1) * angleOffset);
+                this.entities[i].position.x = this.radius * Math.sin(angle + (i+1) * angleOffset);
+            }
+        }
+        
+        // Set position for new element
+        entity.position.z = this.radius * Math.cos(angle);
+        entity.position.x = this.radius * Math.sin(angle);
+
+        this.center_obj.add(entity);
+        this.entities.push(entity);
+    }
+
+    /**
+     * Updates positions, rotations and triggers eventual 'update()' functions 
+     * of orbit entities.
+     * 
+     * @param {number} rotation - An angle in radians, set the rotation of the central object and entities.
+     * @param {boolean} counter_rotate - If 'true', orbit entities rotation is canceled (not central object though).
+     */
+    update(rotation, counter_rotate = false) {
+        this.center_obj.rotation.y = rotation;
+        this.entities.forEach(entity => {
+            try {
+                entity.update();
+            }
+            
+            catch (error) {
+            }
+
+            if (counter_rotate) {
+                entity.rotation.y = -rotation;
+            }
+        });
+    }
+}
+
+/**
+ * Class extending THREE.Mesh with additional functionality representing floating Cards.
+ * 
+ * @extends THREE.Mesh
+ */
 class CardMesh extends THREE.Mesh {
+    /**
+     * Creates a THREE.Mesh object with vertical travel support.
+     * Initial vertical travel direction is randomized (50%) either way.
+     * Object will randomly change direction.
+     * 
+     * @param {*} geometry - A Three.js geometry for the mesh.
+     * @param {*} material - A Three.js material for the mesh.
+     * @param {number} max_speed - Vertical travel max speed, actual speed is randomized.
+     * @param {number} allowed_deviation - Maximum allowed vertical drifting distance, set to 0 for none.
+     * @param {number} acceleration - Acceleration on direction change and initial spawning.
+     */
     constructor(geometry, material, max_speed, allowed_deviation, acceleration) {
         super(geometry, material);
         this.orgPosY           = this.position.y;
@@ -12,6 +94,11 @@ class CardMesh extends THREE.Mesh {
         this._changeDirection(0.5);
     }
 
+    /**
+     * Switches vertical direction.
+     * 
+     * @param {number} chance - Percentage chance of changing direction. 
+     */
     _changeDirection(chance = 0.005) {
         const change = Math.random() < chance;
         if (change) {
@@ -19,9 +106,11 @@ class CardMesh extends THREE.Mesh {
         }
     }
 
-    updatePos(rot_pos_X = 0) {
-        this.rotation.y = rot_pos_X;
-        
+    /**
+     * Updates vertical position, may trigger a direction switch as well.
+     */
+    update() {
+        // Stop if out-of-bounds       
         if (Math.abs(this.position.y - this.orgPosY) > this.allowed_deviation) {
             this.position.y -= this.speed;
             this.speed = 0;
@@ -33,6 +122,7 @@ class CardMesh extends THREE.Mesh {
 
         this._changeDirection();
 
+        // Stop if max speed has been reached
         if (Math.abs(this.speed) > this.max_speed) {
             const d = this.speed < 0 ? -1 : 1; // Keep direction of travel
             this.speed = this.max_speed * d;
@@ -99,32 +189,28 @@ function main() {
     const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
     scene.add(sphere);
 
-    // Fetch images for cards and generate them
-    const cards = generateCards([0, 1, 2, 3, 4, 5 ,6], 6, sphere);
+    // Orbit and cards setup
+    const orbit = new Orbit(sphere, 6);
+    const cards = generateCards([0, 1, 2, 3, 4, 5, 6], 6, sphere);
+    cards.forEach(card => {
+        orbit.add(card, 0, true);
+    });
 
     /**
      * Creates a card for-each image url in imgArr and 
      * uniformly distributes them around the parent at a set radius.
      * 
-     * @param {Object[]}  imgArr - Array of image urls.
+     * @param {Object[]} imgArr - Array of image urls.
      * @param {Number} radius - Orbit radius, from parent center to card center.
      * @param {*} parent - Parent element, must have add() function.
      * @returns array of generated cards
      */
-    function generateCards(imgArr, radius, parent) {
-        const angleOffset = 2*Math.PI / imgArr.length;
+    function generateCards(imgArr) {
         const cards = [];
         for (let i = 0; i < imgArr.length; i++) {
             const geometry = getRoundedEdgePlaneGeometry(2, 3 , 0.6);
             const material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
-            const card = new CardMesh(geometry, material, 0.05, 3.5, 0.0001);
-
-            // Position all cards around the parent uniformly
-            card.position.z = radius * Math.cos(i * angleOffset);
-            card.position.x = radius * Math.sin(i * angleOffset);
-
-            cards.push(card);
-            parent.add(card);
+            cards.push(new CardMesh(geometry, material, 0.05, 3.5, 0.0001));
         };
 
         return cards;
@@ -186,11 +272,7 @@ function main() {
             camera.updateProjectionMatrix();
         }
 
-        sphere.rotation.y = time*0.1;
-        cards.forEach(card => {
-            card.updatePos(-time*0.1);
-        });
-        
+        orbit.update(time*0.1, true);
         controls.update();
         
         renderer.render(scene, camera);
