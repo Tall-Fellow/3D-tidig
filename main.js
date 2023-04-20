@@ -2,28 +2,31 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /**
- * Class representing a perfect circular orbit around a single central object.
+ * Class representing a perfect circular orbit with a single stationary central object.
  */
 class Orbit {
     /**
      * Create a orbit.
      * 
-     * @param {*} center_obj - Object to orbit around.
-     * @param {*} radius - Radius from center at which entities will orbit.
+     * @param {*} center_obj - Object in center of orbit.
+     * @param {*} radius - Radius from system center at which entities will orbit.
      */
     constructor(radius, center_obj) {
         this.radius     = radius;
         this.center_obj = center_obj;
         this.entities   = [];
-        this.center     = new THREE.Group();
-        this.center.add(center_obj);
+        this.focused    = null;
+        this.system     = new THREE.Group();
+        this.orbit      = new THREE.Group();
+        this.system.add(center_obj);
+        this.system.add(this.orbit);
     }
 
     /**
      * @returns THREE.Group representing the orbit system
      */
-    getGroup() {
-        return this.center;
+    getSystem() {
+        return this.system;
     }
 
     /**
@@ -48,7 +51,7 @@ class Orbit {
         entity.position.z = this.radius * Math.cos(angle);
         entity.position.x = this.radius * Math.sin(angle);
 
-        this.center.add(entity);
+        this.orbit.add(entity);
         this.entities.push(entity);
     }
 
@@ -56,23 +59,55 @@ class Orbit {
      * Updates positions, rotations and triggers eventual 'update()' functions 
      * of orbit entities.
      * 
-     * @param {number} rotation - An angle in radians, set the rotation of the central object and entities.
-     * @param {boolean} counter_rotate - If 'true', orbit entities rotation is canceled (not central object though).
+     * @param {number} rotation - An angle in radians, set the rotation of the orbit entities.
+     * @param {boolean} counter_rotate - If 'true', orbit entities rotation is canceled.
      */
-    update(rotation, counter_rotate = false) { 
-        this.center.rotation.y = rotation;
+    update(rotation, counter_rotate = false) {
+        this.orbit.rotation.y = rotation;
         this.entities.forEach(entity => {
+            if (entity === this.focused) { return; }
+
+            if (counter_rotate) {
+                entity.rotation.y = -rotation;
+            }
+
             try {
                 entity.update();
             }
             
             catch (error) {
             }
-
-            if (counter_rotate) {
-                entity.rotation.y = -rotation;
-            }
         });
+    }
+
+    setFocus(entity) {
+        this.focused = entity;
+        this.focused.removeFromParent();
+        this.system.add(this.focused);
+    }
+
+    cycleFocus(backwards = false) {
+        let toFocus;
+        if (this.focused === null && this.entities.length > 0) {
+            toFocus = backwards ? this.entities[this.entities.length-1] : this.entities[0];
+        }
+        
+        else {
+            let f_index = this.entities.indexOf(this.focused);
+            f_index = backwards ? f_index-1 : f_index+1;
+
+            if (f_index == this.entities.length) {
+                f_index = 0
+            }
+            
+            else if (f_index < 0) {
+                f_index = this.entities.length-1;
+            }
+
+            toFocus = this.entities[f_index];
+        }
+
+        this.setFocus(toFocus);
     }
 }
 
@@ -193,19 +228,21 @@ function main() {
     }
     
     // Orbit and cards setup
-    const sphere_geometry = new THREE.SphereGeometry(4, 64, 64);
+    const sphere_geometry = new THREE.SphereGeometry(4, 6, 6);
     const sphere_material = new THREE.MeshPhongMaterial({ emissive: 0xFF9B2A });
     const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
 
     const orbit = new Orbit(6, sphere);
 
-    const cards = generateCards([0, 1, 2, 3, 4, 5, 6], 6, sphere);
+    const cards = generateCards([0, 1, 2, 4, 5], 6, sphere);
     cards.forEach(card => {
         orbit.add(card, 0, true);
     });
 
-    scene.add(orbit.getGroup());
+    scene.add(orbit.getSystem());
 
+    orbit.cycleFocus();
+    
     /**
      * Creates a card for-each image url in imgArr and 
      * uniformly distributes them around the parent at a set radius.
