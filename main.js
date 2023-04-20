@@ -84,6 +84,8 @@ class Orbit {
         this.focused = entity;
         this.focused.removeFromParent();
         this.system.add(this.focused);
+
+        this._bringToFront(this.focused);
     }
 
     cycleFocus(backwards = false) {
@@ -108,6 +110,12 @@ class Orbit {
         }
 
         this.setFocus(toFocus);
+    }
+
+    _bringToFront(entity) {
+        let tween = new TWEEN.Tween(entity.position);
+        tween.to({x: 0, y: 0, z: this.radius+1}, 2000);
+        tween.start();
     }
 }
 
@@ -310,8 +318,11 @@ function main() {
      * updates camera aspect with screen changes.
      */
     function render(time) {
+        requestAnimationFrame(render);
+        TWEEN.update();
+        
         time *= 0.001; // Time since render start in seconds, cumulative
-
+        
         // Camera only needs to be updated if canvas size is changed
         if (resizeRendererToDisplaySize(renderer)) {   
             const canvas = renderer.domElement;
@@ -323,8 +334,6 @@ function main() {
         controls.update();
         
         renderer.render(scene, camera);
-
-        requestAnimationFrame(render)
     }
 
     requestAnimationFrame(render)
