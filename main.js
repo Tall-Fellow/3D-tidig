@@ -11,15 +11,32 @@ class Orbit {
      * @param {*} center_obj - Object in center of orbit.
      * @param {*} radius - Radius from system center at which entities will orbit.
      */
-    constructor(radius, center_obj) {
-        this.radius     = radius;
-        this.center_obj = center_obj;
-        this.entities   = [];
-        this.focused    = null;
-        this.system     = new THREE.Group();
-        this.orbit      = new THREE.Group();
+    constructor(radius, center_obj, focus_dist_mult = 1.2) {
+        this.radius          = radius;
+        this.center_obj      = center_obj;
+        this.focus_dst_mult  = focus_dist_mult;
+        this.entities        = [];
+        this.focused         = {clone: null, real_obj: null};
+        this.system          = new THREE.Group();
+        this.main_orbit      = new THREE.Group();
+        this.focus_orbit     = new THREE.Group();
+        this.transport_orbit = new THREE.Group();
         this.system.add(center_obj);
-        this.system.add(this.orbit);
+        this.system.add(this.main_orbit);
+        this.system.add(this.focus_orbit);
+        this.system.add(this.transport_orbit);
+
+        const fgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
+        const fmaterial = new THREE.MeshBasicMaterial({ color: 0x66327f });
+        this.focus_orbit.add(new THREE.Mesh(fgeometry, fmaterial));
+
+        const tgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
+        const tmaterial = new THREE.MeshBasicMaterial({ color: 0xb9be38 });
+        this.transport_orbit.add(new THREE.Mesh(tgeometry, tmaterial));
+
+        const mgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
+        const mmaterial = new THREE.MeshBasicMaterial({ color: 0x38bebd });
+        this.main_orbit.add(new THREE.Mesh(mgeometry, mmaterial));
     }
 
     /**
@@ -51,7 +68,7 @@ class Orbit {
         entity.position.z = this.radius * Math.cos(angle);
         entity.position.x = this.radius * Math.sin(angle);
 
-        this.orbit.add(entity);
+        this.main_orbit.add(entity);
         this.entities.push(entity);
     }
 
@@ -63,9 +80,11 @@ class Orbit {
      * @param {boolean} counter_rotate - If 'true', orbit entities rotation is canceled.
      */
     update(rotation, counter_rotate = false) {
-        this.orbit.rotation.y = rotation;
+        this.main_orbit.rotation.y = rotation;
+        this._updateTransOrbit(rotation);
+
         this.entities.forEach(entity => {
-            if (entity === this.focused) { return; }
+            if (entity === this.focused.clone) { return; }
 
             if (counter_rotate) {
                 entity.rotation.y = -rotation;
@@ -80,22 +99,14 @@ class Orbit {
         });
     }
 
-    setFocus(entity) {
-        this.focused = entity;
-        this.focused.removeFromParent();
-        this.system.add(this.focused);
-
-        this._bringToFront(this.focused);
-    }
-
     cycleFocus(backwards = false) {
         let toFocus;
-        if (this.focused === null && this.entities.length > 0) {
+        if (this.focused.obj === null && this.entities.length > 0) {
             toFocus = backwards ? this.entities[this.entities.length-1] : this.entities[0];
         }
         
         else {
-            let f_index = this.entities.indexOf(this.focused);
+            let f_index = this.entities.indexOf(this.focused.obj);
             f_index = backwards ? f_index-1 : f_index+1;
 
             if (f_index == this.entities.length) {
@@ -112,10 +123,51 @@ class Orbit {
         this.setFocus(toFocus);
     }
 
+    setFocus(entity) {
+        // If obj already is focused, return it through the transport orbit
+        if (this.focused.clone !== null) {
+            this._bringToTransport();
+        }
+
+        // Clone obj & send clone to focus orbit while hiding real obj in main orbit
+        if (entity !== null) {
+            this.focused.clone = entity.clone();
+            this.focus_orbit.add(this.focused.clone); // Also removes from main orbit
+            this._bringToFront(this.focused.clone);
+
+            this.focused.real_obj = entity;
+            this.focused.real_obj.visible = false; 
+        }
+
+        else {
+            this.focused.clone = null;
+            this.focused.real_obj = null;
+        }
+    }
+
     _bringToFront(entity) {
-        let tween = new TWEEN.Tween(entity.position);
-        tween.to({x: 0, y: 0, z: this.radius+1}, 2000);
-        tween.start();
+        const time = 3000;
+        const new_pos = new THREE.Vector3();
+        new_pos.copy(entity.position).multiplyScalar(this.focus_dst_mult);
+        const angleOffset = Math.atan(new_pos.x/new_pos.z);
+        
+        const tween_entity_pos = new TWEEN.Tween(entity.position).to(new_pos, time/2).start();
+        const tween_entity_rot = new TWEEN.Tween(entity.rotation).to({y: angleOffset}, time).start();
+        const tween_f_orbit_rot = new TWEEN.Tween(this.focus_orbit.rotation).to({y: -angleOffset}, time).start();
+    }
+    
+    _bringToTransport() {
+        const obj = this.focused.clone;
+        this.transport_orbit.add(obj); // Also removes from focus orbit group
+
+        const angleOffset = this.transport_orbit.rotation.y;
+        obj.position.z = this.radius * this.focus_dst_mult * Math.cos(angleOffset);
+        obj.position.x = -this.radius * this.focus_dst_mult * Math.sin(angleOffset);
+        obj.rotation.y = -this.transport_orbit.rotation.y;
+    }
+
+    _updateTransOrbit(rotation) {
+        this.transport_orbit.rotation.y = rotation*2;
     }
 }
 
@@ -197,7 +249,8 @@ function main() {
     const near   = 0.1;
     const far    = 100;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.z = 30;
+    camera.position.z = 0;
+    camera.position.y = 15;
     camera.up.set(0, 1, 0); // Set camera up direction, needed for lookAt()
     camera.lookAt(0, 0, 0); // Point camera towards origo
 
@@ -242,7 +295,7 @@ function main() {
 
     const orbit = new Orbit(6, sphere);
 
-    const cards = generateCards([0, 1, 2, 4, 5], 6, sphere);
+    const cards = generateCards([0, 1, 2, 3, 4, 5], 6, sphere);
     cards.forEach(card => {
         orbit.add(card, 0, true);
     });
@@ -250,6 +303,18 @@ function main() {
     scene.add(orbit.getSystem());
 
     orbit.cycleFocus();
+    setTimeout(() => {
+        orbit.cycleFocus();
+    }, 5000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 4000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 6000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 8000);
     
     /**
      * Creates a card for-each image url in imgArr and 
