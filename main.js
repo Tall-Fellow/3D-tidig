@@ -16,8 +16,8 @@ class Orbit {
         this.center_obj      = center_obj;
         this.focus_dst_mult  = focus_dist_mult;
         this.trans_dst_mult  = trans_dist_mult;
-        this.entities        = [];
-        this.focused         = {clone: null, real_obj: null};
+        this.clone           = null;
+        this.hidden_ents     = [];
         this.system          = new THREE.Group();
         this.main_orbit      = new THREE.Group();
         this.focus_orbit     = new THREE.Group();
@@ -37,7 +37,7 @@ class Orbit {
 
         const mgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
         const mmaterial = new THREE.MeshBasicMaterial({ color: 0x38bebd });
-        this.main_orbit.add(new THREE.Mesh(mgeometry, mmaterial));
+        //this.main_orbit.add(new THREE.Mesh(mgeometry, mmaterial));
     }
 
     /**
@@ -55,13 +55,14 @@ class Orbit {
      * @param {boolean} redistribute_all - Set to 'true' to uniformly redistribute all existing items in the orbit.
      */
     add(entity, angle = 0, redistribute_all = false) {
+        const entities = this.main_orbit.children;
         if (redistribute_all) {
             // Position all existing entities around the parent uniformly with space for the new entity
-            const angleOffset = 2*Math.PI / (this.entities.length + 1);
+            const angleOffset = 2*Math.PI / (entities.length + 1);
 
-            for (let i = 0; i < this.entities.length; i++) {                
-                this.entities[i].position.z = this.radius * Math.cos(angle + (i+1) * angleOffset);
-                this.entities[i].position.x = this.radius * Math.sin(angle + (i+1) * angleOffset);
+            for (let i = 0; i < entities.length; i++) {                
+                entities[i].position.z = this.radius * Math.cos(angle + (i+1) * angleOffset);
+                entities[i].position.x = this.radius * Math.sin(angle + (i+1) * angleOffset);
             }
         }
         
@@ -70,7 +71,6 @@ class Orbit {
         entity.position.x = this.radius * Math.sin(angle);
 
         this.main_orbit.add(entity);
-        this.entities.push(entity);
     }
 
     /**
@@ -82,43 +82,42 @@ class Orbit {
      */
     update(rotation, counter_rotate = false) {
         this.main_orbit.rotation.y = rotation;
-        this._updateTransOrbit(rotation);
+        this.transport_orbit.rotation.y = rotation*3;
 
-        this.entities.forEach(entity => {
-            if (entity === this.focused.clone) { return; }
-
-            if (counter_rotate) {
-                entity.rotation.y = -rotation;
-            }
-
+        this.main_orbit.children.forEach(entity => {
             try {
                 // entity.update();
             }
             
             catch (error) {
             }
+            
+            if (counter_rotate) {
+                entity.rotation.y = -rotation;
+            }
         });
     }
 
     cycleFocus(backwards = false) {
         let toFocus;
-        if (this.focused.real_obj === null && this.entities.length > 0) {
-            toFocus = backwards ? this.entities[this.entities.length-1] : this.entities[0];
+        const entities = this.main_orbit.children;
+        if (this.clone === null && entities.length > 0) {
+            toFocus = backwards ? entities[entities.length-1] : entities[0];
         }
         
         else {
-            let f_index = this.entities.indexOf(this.focused.real_obj);
+            let f_index = entities.indexOf(this.hidden_ents[this.hidden_ents.length-1].entity); // Focused is always last in hidden_ents
             f_index = backwards ? f_index-1 : f_index+1;
 
-            if (f_index == this.entities.length) {
+            if (f_index == entities.length) {
                 f_index = 0
             }
             
             else if (f_index < 0) {
-                f_index = this.entities.length-1;
+                f_index = entities.length-1;
             }
 
-            toFocus = this.entities[f_index];
+            toFocus = entities[f_index];
         }
 
         this.setFocus(toFocus);
@@ -126,7 +125,7 @@ class Orbit {
 
     setFocus(entity) {
         // If obj already is focused, return it through the transport orbit
-        if (this.focused.clone !== null) {
+        if (this.clone !== null) {
             this._focusToTransport();
         }
 
@@ -134,34 +133,33 @@ class Orbit {
         if (entity !== null) {
             this._bringToFront(entity);
 
-            this.focused.real_obj = entity;
-            this.focused.real_obj.visible = false; 
+            entity.visible = false;
+            this.hidden_ents.push({id: this.clone.id, entity: entity});
         }
 
         else {
             this.focused.clone = null;
-            this.focused.real_obj = null;
         }
     }
 
     _bringToFront(entity) {
-        this.focused.clone = entity.clone();
-        entity.parent.add(this.focused.clone);
-        this.focus_orbit.attach(this.focused.clone);
+        this.clone = entity.clone();
+        entity.parent.add(this.clone);
+        this.focus_orbit.attach(this.clone);
 
         const new_pos = new THREE.Vector3();
-        new_pos.copy(this.focused.clone.position).multiplyScalar(this.focus_dst_mult);
+        new_pos.copy(this.clone.position).multiplyScalar(this.focus_dst_mult);
         const direction = new_pos.x < 0 ? 1 : -1;
         const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction;
 
         const time = 3000;
-        new TWEEN.Tween(this.focused.clone.position).to(new_pos, time/2).start();
-        new TWEEN.Tween(this.focused.clone.rotation).to({y: -angle}, time).start();
+        new TWEEN.Tween(this.clone.position).to(new_pos, time/2).start();
+        new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).start();
         new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
     }
     
     _focusToTransport() {
-        const entity = this.focused.clone;
+        const entity = this.clone;
         this.transport_orbit.attach(entity); // Also removes from focus orbit group
         
         const angle = this.transport_orbit.rotation.y;
@@ -174,10 +172,6 @@ class Orbit {
         entity.rotation.y = -this.transport_orbit.rotation.y;
 
         this.focus_orbit.rotation.y = 0;
-    }
-
-    _updateTransOrbit(rotation) {
-        this.transport_orbit.rotation.y = rotation*3;
     }
 }
 
@@ -299,7 +293,7 @@ function main() {
     }
     
     // Orbit and cards setup
-    const sphere_geometry = new THREE.SphereGeometry(4, 6, 6);
+    const sphere_geometry = new THREE.SphereGeometry(4, 32, 32);
     const sphere_material = new THREE.MeshPhongMaterial({ emissive: 0xFF9B2A });
     const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
 
