@@ -26,18 +26,6 @@ class Orbit {
         this.system.add(this.main_orbit);
         this.system.add(this.focus_orbit);
         this.system.add(this.transport_orbit);
-
-        const fgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
-        const fmaterial = new THREE.MeshBasicMaterial({ color: 0x66327f });
-        this.focus_orbit.add(new THREE.Mesh(fgeometry, fmaterial));
-
-        const tgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
-        const tmaterial = new THREE.MeshBasicMaterial({ color: 0xb9be38 });
-        this.transport_orbit.add(new THREE.Mesh(tgeometry, tmaterial));
-
-        const mgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
-        const mmaterial = new THREE.MeshBasicMaterial({ color: 0x38bebd });
-        //this.main_orbit.add(new THREE.Mesh(mgeometry, mmaterial));
     }
 
     /**
@@ -66,9 +54,10 @@ class Orbit {
             }
         }
         
-        // Set position for new element
+        // Set position for new element and add a new property
         entity.position.z = this.radius * Math.cos(angle);
         entity.position.x = this.radius * Math.sin(angle);
+        entity.disable_rotation = false;
 
         this.main_orbit.add(entity);
     }
@@ -84,17 +73,21 @@ class Orbit {
         this.main_orbit.rotation.y = rotation;
         this.transport_orbit.rotation.y = rotation*3;
 
-        this.main_orbit.children.forEach(entity => {
+        this.main_orbit.children.forEach(child => {
             try {
-                // entity.update();
+                // child.update();
             }
             
             catch (error) {
             }
             
-            if (counter_rotate) {
-                entity.rotation.y = -rotation;
+            if (counter_rotate && !child.disable_rotation) {
+                child.rotation.y = -rotation;
             }
+        });
+
+        this.transport_orbit.children.forEach(child => {
+            this._tryDock(child);
         });
     }
 
@@ -153,7 +146,7 @@ class Orbit {
         const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction;
 
         const time = 3000;
-        new TWEEN.Tween(this.clone.position).to(new_pos, time/2).start();
+        new TWEEN.Tween(this.clone.position).to(new_pos, time/1.5).start();
         new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).start();
         new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
     }
@@ -162,16 +155,55 @@ class Orbit {
         const entity = this.clone;
         this.transport_orbit.attach(entity); // Also removes from focus orbit group
         
-        const angle = this.transport_orbit.rotation.y;
         const new_pos = new THREE.Vector3();
         new_pos.copy(entity.position).divideScalar(this.focus_dst_mult);
         new_pos.multiplyScalar(this.trans_dst_mult);
         
-        const time = 500;
+        const time = 1000;
         new TWEEN.Tween(entity.position).to(new_pos, time).start();
         entity.rotation.y = -this.transport_orbit.rotation.y;
 
+        // Reset focus orbit for next _bringToFront() call
         this.focus_orbit.rotation.y = 0;
+    }
+
+    _tryDock(entity) {
+        const docking_range = 6;
+        const time = 2000;
+
+        const actual_pos = new THREE.Vector3();
+        entity.getWorldPosition(actual_pos);
+
+        this.hidden_ents.forEach((obj, i) => {
+            // Convert to world positions
+            const target_pos = new THREE.Vector3();
+            obj.entity.getWorldPosition(target_pos);
+            target_pos.multiplyScalar(this.trans_dst_mult); // Because obj.entity is in main orbit
+
+            // If inside docking range
+            if (actual_pos.distanceToSquared(target_pos) <= docking_range) {
+                entity.disable_rotation = true;
+                this.main_orbit.attach(entity);
+
+                new TWEEN.Tween(entity.rotation)
+                .to({y: obj.entity.rotation.y}, time)
+                .start();
+
+                new TWEEN.Tween(entity.position)
+                .to({x: obj.entity.position.x, z: obj.entity.position.z}, time)
+                .start();
+
+                const ctx = {entity, obj};
+                const onFinish = function() {
+                    this.entity.removeFromParent();
+                    this.obj.entity.visible = true;
+                }.bind(ctx);
+
+                setTimeout(onFinish, time*1);
+
+                this.hidden_ents.splice(i, 1);
+            }
+        });
     }
 }
 
