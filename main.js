@@ -57,7 +57,7 @@ class Orbit {
         // Set position for new element and add a new property
         entity.position.z = this.radius * Math.cos(angle);
         entity.position.x = this.radius * Math.sin(angle);
-        entity.disable_rotation = false;
+        entity.freeze_rotation = false;
 
         this.main_orbit.add(entity);
     }
@@ -80,9 +80,16 @@ class Orbit {
             
             catch (error) {
             }
-            
-            if (counter_rotate && !child.disable_rotation) {
+
+            if (counter_rotate && !child.freeze_rotation) {
                 child.rotation.y = -rotation;
+            }
+
+            if (child.freeze_rotation) {
+                child.rotation.y = -rotation*4;
+                if (this._isDockRotDone(child)) {
+                    child.freeze_rotation = false;
+                }
             }
         });
 
@@ -127,7 +134,7 @@ class Orbit {
             this._bringToFront(entity);
 
             entity.visible = false;
-            this.hidden_ents.push({id: this.clone.id, entity: entity});
+            this.hidden_ents.push(entity);
         }
 
         else {
@@ -167,43 +174,56 @@ class Orbit {
         this.focus_orbit.rotation.y = 0;
     }
 
-    _tryDock(entity) {
-        const docking_range = 6;
-        const time = 2000;
-
+    _tryDock(obj, docking_range = 6, time = 3000) {
         const actual_pos = new THREE.Vector3();
-        entity.getWorldPosition(actual_pos);
+        obj.getWorldPosition(actual_pos);
 
-        this.hidden_ents.forEach((obj, i) => {
+        this.hidden_ents.forEach((hidden_obj, i) => {
             // Convert to world positions
             const target_pos = new THREE.Vector3();
-            obj.entity.getWorldPosition(target_pos);
-            target_pos.multiplyScalar(this.trans_dst_mult); // Because obj.entity is in main orbit
+            hidden_obj.getWorldPosition(target_pos);
+            target_pos.multiplyScalar(this.trans_dst_mult); // Because entity is in main orbit
 
             // If inside docking range
             if (actual_pos.distanceToSquared(target_pos) <= docking_range) {
-                entity.disable_rotation = true;
-                this.main_orbit.attach(entity);
+                obj.freeze_rotation = true;
+                this.main_orbit.attach(obj);
 
-                new TWEEN.Tween(entity.rotation)
-                .to({y: obj.entity.rotation.y}, time)
+                const system_rotation = new THREE.Quaternion();
+                this.system.getWorldQuaternion(system_rotation);
+        
+                const obj_rotation = new THREE.Quaternion();
+                obj.getWorldQuaternion(obj_rotation);
+                const angle = obj_rotation.angleTo(system_rotation);
+
+                obj.rotation.y = angle;
+
+                new TWEEN.Tween(obj.position)
+                .to({x: hidden_obj.position.x, z: hidden_obj.position.z}, time)
                 .start();
 
-                new TWEEN.Tween(entity.position)
-                .to({x: obj.entity.position.x, z: obj.entity.position.z}, time)
-                .start();
-
-                const ctx = {entity, obj};
+                const ctx = {obj, hidden_obj};
                 const onFinish = function() {
-                    this.entity.removeFromParent();
-                    this.obj.entity.visible = true;
+                    this.obj.removeFromParent();
+                    this.hidden_obj.visible = true;
                 }.bind(ctx);
 
-                setTimeout(onFinish, time*1);
+                setTimeout(onFinish, time);
 
                 this.hidden_ents.splice(i, 1);
             }
         });
+    }
+
+    _isDockRotDone(obj, tolerance = 0.0175) {
+        const system_rotation = new THREE.Quaternion();
+        this.system.getWorldQuaternion(system_rotation);
+
+        const obj_rotation = new THREE.Quaternion();
+        obj.getWorldQuaternion(obj_rotation);
+        const angle = obj_rotation.angleTo(system_rotation);
+
+        return (angle <= tolerance || angle >= Math.PI - tolerance) ? true : false;
     }
 }
 
@@ -331,7 +351,7 @@ function main() {
 
     const orbit = new Orbit(6, sphere);
 
-    const cards = generateCards([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 6, sphere);
+    const cards = generateCards([0, 1, 2], 6, sphere);
     cards.forEach(card => {
         orbit.add(card, 0, true);
     });
@@ -342,15 +362,27 @@ function main() {
     setTimeout(() => {
         orbit.cycleFocus();
     }, 5000);
-    setTimeout(() => {
-        orbit.cycleFocus();
-    }, 10000);
-    setTimeout(() => {
-        orbit.cycleFocus();
-    }, 15000);
-    setTimeout(() => {
-        orbit.cycleFocus();
-    }, 20000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 10000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 15000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 20000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 25000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 30000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 35000);
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 40000);
     
     /**
      * Creates a card for-each image url in imgArr and 
