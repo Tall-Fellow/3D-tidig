@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /**
- * Class representing a perfect circular orbit with a single stationary central object.
+ * Class representing a perfectly circular orbit with a single stationary central object.
  */
 class Orbit {
     /**
@@ -10,6 +10,8 @@ class Orbit {
      * 
      * @param {*} center_obj - Object in center of orbit.
      * @param {*} radius - Radius from system center at which entities will orbit.
+     * @param {number} focus_dist_mult - Multiplier for focus point distance
+     * @param {number} trans_dist_mult - Multiplier for transport orbit distance
      */
     constructor(radius, center_obj, focus_dist_mult = 1.3, trans_dist_mult = 1.2) {
         this.radius          = radius;
@@ -85,6 +87,7 @@ class Orbit {
                 child.rotation.y = -rotation;
             }
 
+            // When a child is transferring from transport to main orbit
             if (child.freeze_rotation) {
                 child.rotation.y = -rotation*4;
                 if (this._isDockRotDone(child)) {
@@ -93,14 +96,22 @@ class Orbit {
             }
         });
 
+        // Check if transport orbit entities are close enough to dock with main orbit
         this.transport_orbit.children.forEach(child => {
             this._tryDock(child);
         });
     }
 
+    /**
+     * Cycles the focused entity.
+     * 
+     * @param {boolean} backwards - Sets cycle direction.
+     */
     cycleFocus(backwards = false) {
-        let toFocus;
         const entities = this.main_orbit.children;
+        let toFocus;
+
+        // No active focus item
         if (this.clone === null && entities.length > 0) {
             toFocus = backwards ? entities[entities.length-1] : entities[0];
         }
@@ -123,57 +134,85 @@ class Orbit {
         this.setFocus(toFocus);
     }
 
+    /**
+     * Set 'entity' as new focused entity and returns old focused entity to its position.
+     * 
+     * @param {THREE.Object3D} entity - The new entity to focus, if 'null' nothing will be focused but 
+     * the old focused object will be returned to its position.
+     */
     setFocus(entity) {
         // If obj already is focused, return it through the transport orbit
         if (this.clone !== null) {
             this._focusToTransport();
         }
 
-        // Clone obj & send clone to focus orbit while hiding real obj in main orbit
+        // Send to focus orbit while hiding real obj in main orbit
         if (entity !== null) {
             this._bringToFront(entity);
-
-            entity.visible = false;
-            this.hidden_ents.push(entity);
         }
 
+        // No new focus entity
         else {
             this.focused.clone = null;
         }
     }
 
-    _bringToFront(entity) {
+    /**
+     * Takes an entity from the main orbit and clones it, the clone is then brought to the focus point.
+     * 
+     * @param {THREE.Object3D} entity - Entity to focus.
+     * @param {number} time - Animation time in milliseconds.
+     */
+    _bringToFront(entity, time = 3000) {
         this.clone = entity.clone();
-        entity.parent.add(this.clone);
-        this.focus_orbit.attach(this.clone);
+        entity.parent.add(this.clone); // To get right position & rotation data
+        this.focus_orbit.attach(this.clone); // Drops old parent (main orbit)
+
+        // Hide original entity (still in main orbit)
+        entity.visible = false;
+        this.hidden_ents.push(entity);
 
         const new_pos = new THREE.Vector3();
         new_pos.copy(this.clone.position).multiplyScalar(this.focus_dst_mult);
-        const direction = new_pos.x < 0 ? 1 : -1;
+        const direction = new_pos.x < 0 ? 1 : -1; // Find the closet travel direction
         const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction;
 
-        const time = 3000;
+        // Animated transitions
         new TWEEN.Tween(this.clone.position).to(new_pos, time/1.5).start();
         new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).start();
         new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
     }
     
-    _focusToTransport() {
+    /**
+     * Brings the focused entity from the focus point to the transport orbit.
+     * 
+     * @param {number} time - Animation time in milliseconds. 
+     */
+    _focusToTransport(time = 2000) {
         const entity = this.clone;
         this.transport_orbit.attach(entity); // Also removes from focus orbit group
         
+        // Re-calc distance for new orbit
         const new_pos = new THREE.Vector3();
         new_pos.copy(entity.position).divideScalar(this.focus_dst_mult);
         new_pos.multiplyScalar(this.trans_dst_mult);
         
-        const time = 1000;
+        // Animate transition and set rotation to be parallel
         new TWEEN.Tween(entity.position).to(new_pos, time).start();
         entity.rotation.y = -this.transport_orbit.rotation.y;
 
-        // Reset focus orbit for next _bringToFront() call
+        // Reset focus orbit for next _bringToFront() call so 
+        // that it always starts at the same position
         this.focus_orbit.rotation.y = 0;
     }
 
+    /**
+     * Tries to dock an entity from transport orbit into a free slot on the main orbit.
+     * 
+     * @param {THREE.Object3D} obj - Entity to try and dock.
+     * @param {number} docking_range - Distance threshold used to determine when to start the docking process.
+     * @param {number} time - Animation time in milliseconds.
+     */
     _tryDock(obj, docking_range = 6, time = 3000) {
         const actual_pos = new THREE.Vector3();
         obj.getWorldPosition(actual_pos);
@@ -215,6 +254,15 @@ class Orbit {
         });
     }
 
+    /**
+     * Checks if entity is sufficiently rotated.
+     * 
+     * @param {THREE.Object3D} obj - Entity to check.
+     * @param {number} tolerance - The angle threshold in radians between the actual and targeted position, function will start returning 'true'
+     * after it has been reached. Defaults to 1 degree.
+     * 
+     * @returns 'true' if angle is within threshold.
+     */
     _isDockRotDone(obj, tolerance = 0.0175) {
         const system_rotation = new THREE.Quaternion();
         this.system.getWorldQuaternion(system_rotation);
