@@ -1,5 +1,27 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
+
+class ColorGUIHelper {
+    constructor(object, prop) {
+      this.object = object;
+      this.prop = prop;
+    }
+    get value() {
+      return `#${this.object[this.prop].getHexString()}`;
+    }
+    set value(hexString) {
+      this.object[this.prop].set(hexString);
+    }
+}
+
+function makeXYZGUI(gui, vector3, name, onChangeFn) {
+    const folder = gui.addFolder(name);
+    folder.add(vector3, 'x', -30, 30).onChange(onChangeFn);
+    folder.add(vector3, 'y', -30, 30).onChange(onChangeFn);
+    folder.add(vector3, 'z', -30, 30).onChange(onChangeFn);
+    folder.open();
+}
 
 /**
  * Class representing a perfectly circular orbit with a single stationary central object.
@@ -353,8 +375,7 @@ function main() {
     const near   = 0.1;
     const far    = 100;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.z = 0;
-    camera.position.y = 15;
+    camera.position.z = 10;
     camera.up.set(0, 1, 0); // Set camera up direction, needed for lookAt()
     camera.lookAt(0, 0, 0); // Point camera towards origo
 
@@ -373,10 +394,17 @@ function main() {
 
     // Light setup
     const color = 0xFFFFFF;
-    const intensity = 0.6;
+    const intensity = 0.35;
+
     const light = new THREE.DirectionalLight(color, intensity);
-    light.position.set(-1, 4, 6);
+    light.position.set(0, 10, 30);
+    light.target.position.set(0, 0, 0);
+
+    const helper = new THREE.DirectionalLightHelper(light);
+
     scene.add(light);
+    scene.add(light.target);
+    scene.add(helper)
 
     // Orientation markers setup - Used for development
     {
@@ -393,23 +421,66 @@ function main() {
     }
     
     // Orbit and cards setup
-    const sphere_geometry = new THREE.SphereGeometry(4, 32, 32);
-    const sphere_material = new THREE.MeshPhongMaterial({ emissive: 0xFF9B2A });
+    const sphere_geometry = new THREE.SphereGeometry(4, 64, 64);
+    const sphere_material = new THREE.MeshPhysicalMaterial({
+        clearcoat: 0.7,
+        clearcoatRoughness: 0.55,
+        roughness: 0.65,
+        metalness: 0.6,
+        emissive: 0xFF9B2A
+    });
     const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
 
     const orbit = new Orbit(6, sphere);
 
-    const cards = generateCards([0, 1, 2], 6, sphere);
+        // Temp
+    const loader = new THREE.TextureLoader();
+    const card_material = new THREE.MeshPhongMaterial({
+        map: loader.load('media/Group 370.png'),
+        side: THREE.DoubleSide
+    });
+
+    const cards = generateCards([0, 1, 2, 3, 4, 5], card_material);
     cards.forEach(card => {
         orbit.add(card, 0, true);
     });
 
     scene.add(orbit.getSystem());
 
-    orbit.cycleFocus();
-    setTimeout(() => {
-        orbit.cycleFocus();
-    }, 5000);
+    // GUI setup
+    function updateLight() {
+        light.target.updateMatrixWorld();
+        helper.update();
+    }
+    updateLight();
+
+    const gui = new GUI();
+
+    const folder_sphere = gui.addFolder('Sphere');
+    folder_sphere.addColor(new ColorGUIHelper(sphere_material, 'emissive'), 'value').name('emissive');
+    folder_sphere.add(sphere_material, 'clearcoat', 0, 1, 0.05);
+    folder_sphere.add(sphere_material, 'clearcoatRoughness', 0, 1, 0.05);
+    folder_sphere.add(sphere_material, 'roughness', 0, 1, 0.05);
+    folder_sphere.add(sphere_material, 'metalness', 0, 1, 0.05);
+
+    const folder_light = gui.addFolder('Light');
+    folder_light.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
+    folder_light.add(light, 'intensity', 0, 1, 0.05);
+    folder_light.add(light.target.position, 'x', -30, 30);
+    folder_light.add(light.target.position, 'z', -30, 30);
+    folder_light.add(light.target.position, 'y', -30, 30);
+    makeXYZGUI(folder_light, light.position, 'position', updateLight);
+    makeXYZGUI(folder_light, light.target.position, 'target', updateLight);
+
+    const folder_cards = gui.addFolder('Cards');
+    folder_cards.addColor(new ColorGUIHelper(card_material, 'emissive'), 'value').name('emissive');
+    folder_cards.add(card_material, 'shininess', 0, 300, 5);
+    folder_cards.add(card_material, 'side', { Front: THREE.FrontSide, Double: THREE.DoubleSide });
+
+    //orbit.cycleFocus();
+    // setTimeout(() => {
+    //     orbit.cycleFocus();
+    // }, 5000);
     // setTimeout(() => {
     //     orbit.cycleFocus();
     // }, 10000);
@@ -441,11 +512,17 @@ function main() {
      * @param {*} parent - Parent element, must have add() function.
      * @returns array of generated cards
      */
-    function generateCards(imgArr) {
+    function generateCards(imgArr, material) {
         const cards = [];
+        // const loader = new THREE.TextureLoader();
+
         for (let i = 0; i < imgArr.length; i++) {
-            const geometry = getRoundedEdgePlaneGeometry(2, 3 , 0.6);
-            const material = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide });
+            // const geometry = getRoundedEdgePlaneGeometry(2, 3 , 0.2);
+            const geometry = new THREE.PlaneGeometry(2, 3);
+            // const material = new THREE.MeshPhongMaterial({
+            //     map: loader.load('media/Group 370.png'),
+            //     side: THREE.DoubleSide
+            // });
             cards.push(new CardMesh(geometry, material, 0.05, 3.5, 0.0001));
         };
 
@@ -473,7 +550,7 @@ function main() {
         shape.lineTo(x + radius, y);
         shape.quadraticCurveTo(x, y, x, y + radius);
 
-        return new THREE.ShapeGeometry(shape);
+        return new THREE.ShapeGeometry(shape, 6);
     }
 
     /**
