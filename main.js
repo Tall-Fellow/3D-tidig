@@ -422,17 +422,10 @@ function main() {
     // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color('#192633');
-    // {
-    //     const color = 0x192633;
-    //     const near  = 10;
-    //     const far   = 50;
-    //     scene.fog = new THREE.Fog(color, near, far);
-    // }
 
     // Light setup
     const color = 0xFFFFFF;
     const intensity = 0.35;
-
     const light = new THREE.SpotLight(color, intensity);
     light.position.set(0, 2, 12);
     light.target.position.set(0, 0, 0);
@@ -446,9 +439,9 @@ function main() {
     
     const lightHelper = new THREE.SpotLightHelper(light);
     const cameraHelper = new THREE.CameraHelper(light.shadow.camera);
+
     scene.add(lightHelper)
     scene.add(cameraHelper);
-
     scene.add(light);
     scene.add(light.target);
 
@@ -481,14 +474,14 @@ function main() {
 
     const orbit = new Orbit(6, sphere);
 
-        // Temp
-    const loader = new THREE.TextureLoader();
-    const card_material = new THREE.MeshPhongMaterial({
-        map: loader.load('media/Group 370.png'),
-        side: THREE.DoubleSide
-    });
-
-    const cards = generateCards([0, 1, 2, 3, 4, 5], card_material);
+    const card_media_paths = [
+        {path: 'media/Group 370.png', width: 1188, height: 1592},
+        {path: 'media/Group 371.png', width: 852, height: 1760},
+        {path: 'media/Group 439.png', width: 3432, height: 2232},
+        {path: 'media/Group 444.png', width: 852, height: 1760}
+    ];
+    
+    const cards = generateCards(card_media_paths);
     cards.forEach(card => {
         card.receiveShadow = true;
         card.castShadow = true;
@@ -541,12 +534,12 @@ function main() {
     folder_sphere.add(sphere_material, 'roughness', 0, 1, 0.05);
     folder_sphere.add(sphere_material, 'metalness', 0, 1, 0.05);
 
-    const folder_cards = gui.addFolder('Cards');
-    folder_cards.addColor(new ColorGUIHelper(card_material, 'emissive'), 'value').name('emissive');
-    folder_cards.add(card_material, 'shininess', 0, 300, 5);
-    folder_cards.add(card_material, 'side', { Front: THREE.FrontSide, Double: THREE.DoubleSide });
+    // const folder_cards = gui.addFolder('Cards');
+    // folder_cards.addColor(new ColorGUIHelper(card_material, 'emissive'), 'value').name('emissive');
+    // folder_cards.add(card_material, 'shininess', 0, 300, 5);
+    // folder_cards.add(card_material, 'side', { Front: THREE.FrontSide, Double: THREE.DoubleSide });
 
-    //orbit.cycleFocus();
+    orbit.cycleFocus();
     // setTimeout(() => {
     //     orbit.cycleFocus();
     // }, 5000);
@@ -573,27 +566,27 @@ function main() {
     // }, 40000);
     
     /**
-     * Creates a card for-each image url in imgArr and 
-     * uniformly distributes them around the parent at a set radius.
+     * Creates a card for each media object. 
      * 
-     * @param {Object[]} imgArr - Array of image urls.
-     * @param {Number} radius - Orbit radius, from parent center to card center.
-     * @param {*} parent - Parent element, must have add() function.
-     * @returns array of generated cards
+     * @param {Object[]} media_objs - Array of custom media objects, [{path: 'path/to/media', width: X, height: X}, ...].
+     * @returns array of generated custom THREE.Object3D objects.
      */
-    function generateCards(imgArr, material) {
+    function generateCards(media_objs) {
+        const loader = new THREE.TextureLoader();
         const cards = [];
-        // const loader = new THREE.TextureLoader();
+        media_objs.forEach(media_obj => {
+            const material = new THREE.MeshPhongMaterial({
+                map: loader.load(media_obj.path),
+                side: THREE.DoubleSide
+            });
+            
+            const aspect = media_obj.width / media_obj.height;
+            const height = 3;
+            const width = height * aspect;
+            const geometry = new THREE.PlaneGeometry(width, height);
 
-        for (let i = 0; i < imgArr.length; i++) {
-            // const geometry = getRoundedEdgePlaneGeometry(2, 3 , 0.2);
-            const geometry = new THREE.PlaneGeometry(2, 3);
-            // const material = new THREE.MeshPhongMaterial({
-            //     map: loader.load('media/Group 370.png'),
-            //     side: THREE.DoubleSide
-            // });
             cards.push(new CardMesh(geometry, material, 0.05, 3.5, 0.0001));
-        };
+        });
 
         return cards;
     }
