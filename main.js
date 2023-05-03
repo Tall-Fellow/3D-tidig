@@ -15,6 +15,42 @@ class ColorGUIHelper {
     }
 }
 
+class DegRadHelper {
+    constructor(obj, prop) {
+      this.obj = obj;
+      this.prop = prop;
+    }
+    get value() {
+      return THREE.MathUtils.radToDeg(this.obj[this.prop]);
+    }
+    set value(v) {
+      this.obj[this.prop] = THREE.MathUtils.degToRad(v);
+    }
+}
+
+class MinMaxGUIHelper {
+    constructor(obj, minProp, maxProp, minDif) {
+      this.obj = obj;
+      this.minProp = minProp;
+      this.maxProp = maxProp;
+      this.minDif = minDif;
+    }
+    get min() {
+      return this.obj[this.minProp];
+    }
+    set min(v) {
+      this.obj[this.minProp] = v;
+      this.obj[this.maxProp] = Math.max(this.obj[this.maxProp], v + this.minDif);
+    }
+    get max() {
+      return this.obj[this.maxProp];
+    }
+    set max(v) {
+      this.obj[this.maxProp] = v;
+      this.min = this.min;  // this will call the min setter
+    }
+}
+
 function makeXYZGUI(gui, vector3, name, onChangeFn) {
     const folder = gui.addFolder(name);
     folder.add(vector3, 'x', -30, 30).onChange(onChangeFn);
@@ -368,6 +404,7 @@ function main() {
     const canvas = document.querySelector('#main_canvas');
     // Takes data and renders onto canvas
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+    renderer.shadowMap.enabled = true;
 
     // Camera setup
     const fov    = 75;
@@ -396,15 +433,24 @@ function main() {
     const color = 0xFFFFFF;
     const intensity = 0.35;
 
-    const light = new THREE.DirectionalLight(color, intensity);
-    light.position.set(0, 10, 30);
+    const light = new THREE.SpotLight(color, intensity);
+    light.position.set(0, 2, 12);
     light.target.position.set(0, 0, 0);
-
-    const helper = new THREE.DirectionalLightHelper(light);
+    light.angle = 40*Math.PI/180;
+    light.castShadow = true;
+    light.shadow.bias = -0.0003;
+    light.penumbra = 0.2;
+    light.shadow.near = 4,5;
+    light.shadow.far = 25;
+    light.shadow.camera.zoom = 1.7;
+    
+    const lightHelper = new THREE.SpotLightHelper(light);
+    const cameraHelper = new THREE.CameraHelper(light.shadow.camera);
+    scene.add(lightHelper)
+    scene.add(cameraHelper);
 
     scene.add(light);
     scene.add(light.target);
-    scene.add(helper)
 
     // Orientation markers setup - Used for development
     {
@@ -430,6 +476,8 @@ function main() {
         emissive: 0xFF9B2A
     });
     const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
+    sphere.receiveShadow = true;
+    sphere.castShadow = true;
 
     const orbit = new Orbit(6, sphere);
 
@@ -442,6 +490,8 @@ function main() {
 
     const cards = generateCards([0, 1, 2, 3, 4, 5], card_material);
     cards.forEach(card => {
+        card.receiveShadow = true;
+        card.castShadow = true;
         orbit.add(card, 0, true);
     });
 
@@ -450,27 +500,46 @@ function main() {
     // GUI setup
     function updateLight() {
         light.target.updateMatrixWorld();
-        helper.update();
+        lightHelper.update();
     }
     updateLight();
 
-    const gui = new GUI();
+    function updateCamera() {
+        // update the light target's matrixWorld because it's needed by the helper
+        light.target.updateMatrixWorld();
+        lightHelper.update();
+        // update the light's shadow camera's projection matrix
+        light.shadow.camera.updateProjectionMatrix();
+        // and now update the camera helper we're using to show the light's shadow camera
+        cameraHelper.update();
+    }
+    updateCamera();
 
+    const gui = new GUI();
+    
+    const folder_light = gui.addFolder('Light');
+    folder_light.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
+    folder_light.add(light, 'intensity', 0, 1, 0.05);
+    folder_light.add(new DegRadHelper(light, 'angle'), 'value', 0, 90).name('angle').onChange(updateLight);
+    folder_light.add(light, 'penumbra', 0, 1, 0.01);
+    makeXYZGUI(folder_light, light.position, 'position', updateLight);
+    makeXYZGUI(folder_light, light.target.position, 'target', updateLight);
+
+    const folder_shadow = gui.addFolder('Shadow');
+    const minMaxGUIHelper = new MinMaxGUIHelper(light.shadow.camera, 'near', 'far', 0.1);
+    folder_shadow.add(minMaxGUIHelper, 'min', 0.1, 50, 0.1).name('near').onChange(updateCamera);
+    folder_shadow.add(minMaxGUIHelper, 'max', 0.1, 50, 0.1).name('far').onChange(updateCamera);
+    folder_shadow.add(light.shadow.camera, 'zoom', 0.01, 3, 0.01).onChange(updateCamera);
+    folder_shadow.add(light.shadow.mapSize, 'height', 0, 1024, 1);
+    folder_shadow.add(light.shadow.mapSize, 'width', 0, 1024, 1);
+    folder_shadow.add(light.shadow, 'bias', -0.001, 0.001, 0.0001);
+    
     const folder_sphere = gui.addFolder('Sphere');
     folder_sphere.addColor(new ColorGUIHelper(sphere_material, 'emissive'), 'value').name('emissive');
     folder_sphere.add(sphere_material, 'clearcoat', 0, 1, 0.05);
     folder_sphere.add(sphere_material, 'clearcoatRoughness', 0, 1, 0.05);
     folder_sphere.add(sphere_material, 'roughness', 0, 1, 0.05);
     folder_sphere.add(sphere_material, 'metalness', 0, 1, 0.05);
-
-    const folder_light = gui.addFolder('Light');
-    folder_light.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
-    folder_light.add(light, 'intensity', 0, 1, 0.05);
-    folder_light.add(light.target.position, 'x', -30, 30);
-    folder_light.add(light.target.position, 'z', -30, 30);
-    folder_light.add(light.target.position, 'y', -30, 30);
-    makeXYZGUI(folder_light, light.position, 'position', updateLight);
-    makeXYZGUI(folder_light, light.target.position, 'target', updateLight);
 
     const folder_cards = gui.addFolder('Cards');
     folder_cards.addColor(new ColorGUIHelper(card_material, 'emissive'), 'value').name('emissive');
