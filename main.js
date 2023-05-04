@@ -405,6 +405,7 @@ function main() {
     // Takes data and renders onto canvas
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
     renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.NoToneMapping;
 
     // Camera setup
     const fov    = 75;
@@ -432,7 +433,7 @@ function main() {
     light.angle = 40*Math.PI/180;
     light.castShadow = true;
     light.shadow.bias = -0.0003;
-    light.penumbra = 0.2;
+    light.penumbra = 0.05;
     light.shadow.near = 4,5;
     light.shadow.far = 25;
     light.shadow.camera.zoom = 1.7;
@@ -580,6 +581,12 @@ function main() {
                 side: THREE.DoubleSide
             });
             
+            // Combat blurriness at distance
+            const anisotropy = renderer.capabilities.getMaxAnisotropy();
+            material.map.anisotropy = anisotropy;
+            material.map.magFilter = THREE.LinearFilter;
+            material.map.minFilter = THREE.LinearMipmapLinearFilter;
+
             const aspect = media_obj.width / media_obj.height;
             const height = 3;
             const width = height * aspect;
