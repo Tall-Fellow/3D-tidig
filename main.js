@@ -433,18 +433,29 @@ function main() {
     light.angle = 40*Math.PI/180;
     light.castShadow = true;
     light.shadow.bias = -0.0003;
-    light.penumbra = 0.05;
-    light.shadow.near = 4,5;
-    light.shadow.far = 25;
+    light.penumbra = 0.00;
+    light.shadow.camera.near = 1;
+    light.shadow.camera.far = 25;
     light.shadow.camera.zoom = 1.7;
     
     const lightHelper = new THREE.SpotLightHelper(light);
     const cameraHelper = new THREE.CameraHelper(light.shadow.camera);
-
-    scene.add(lightHelper)
-    scene.add(cameraHelper);
+    
+    //scene.add(lightHelper)
+    //scene.add(cameraHelper);
     scene.add(light);
     scene.add(light.target);
+
+    const skyColor = 0xFFFFFF;
+    const groundColor = 0x000000;
+    const intensity2 = 0.6;
+    const light2 = new THREE.HemisphereLight(skyColor, groundColor, intensity2);
+    light2.position.set(0, 14, 12);
+    
+    const lightHelper2 = new THREE.HemisphereLightHelper(light2);
+    
+    //scene.add(lightHelper2)
+    scene.add(light2);
 
     // Orientation markers setup - Used for development
     {
@@ -463,10 +474,10 @@ function main() {
     // Orbit and cards setup
     const sphere_geometry = new THREE.SphereGeometry(4, 64, 64);
     const sphere_material = new THREE.MeshPhysicalMaterial({
-        clearcoat: 0.7,
-        clearcoatRoughness: 0.55,
-        roughness: 0.65,
-        metalness: 0.6,
+        clearcoat: 1.00,
+        clearcoatRoughness: 0.60,
+        roughness: 0.75,
+        metalness: 0.85,
         emissive: 0xFF9B2A
     });
     const sphere = new THREE.Mesh(sphere_geometry, sphere_material);
@@ -494,14 +505,15 @@ function main() {
     // GUI setup
     function updateLight() {
         light.target.updateMatrixWorld();
-        lightHelper.update();
+        //lightHelper.update();
+        //lightHelper2.update();
     }
     updateLight();
 
     function updateCamera() {
         // update the light target's matrixWorld because it's needed by the helper
         light.target.updateMatrixWorld();
-        lightHelper.update();
+        //lightHelper.update();
         // update the light's shadow camera's projection matrix
         light.shadow.camera.updateProjectionMatrix();
         // and now update the camera helper we're using to show the light's shadow camera
@@ -518,6 +530,13 @@ function main() {
     folder_light.add(light, 'penumbra', 0, 1, 0.01);
     makeXYZGUI(folder_light, light.position, 'position', updateLight);
     makeXYZGUI(folder_light, light.target.position, 'target', updateLight);
+    
+    const folder_light2 = gui.addFolder('Light Focus');
+    //folder_light2.addColor(new ColorGUIHelper(light2, 'skyColor'), 'value').name('skyColor');
+    //folder_light2.addColor(new ColorGUIHelper(light2, 'groundColor'), 'value').name('groundColor');
+    folder_light2.add(light2, 'intensity', 0, 1, 0.05);
+    makeXYZGUI(folder_light2, light2.position, 'position', updateLight);
+    //makeXYZGUI(folder_light2, light2.target.position, 'target', updateLight);
 
     const folder_shadow = gui.addFolder('Shadow');
     const minMaxGUIHelper = new MinMaxGUIHelper(light.shadow.camera, 'near', 'far', 0.1);
@@ -540,7 +559,7 @@ function main() {
     // folder_cards.add(card_material, 'shininess', 0, 300, 5);
     // folder_cards.add(card_material, 'side', { Front: THREE.FrontSide, Double: THREE.DoubleSide });
 
-    orbit.cycleFocus();
+    //orbit.cycleFocus();
     // setTimeout(() => {
     //     orbit.cycleFocus();
     // }, 5000);
@@ -580,7 +599,7 @@ function main() {
                 map: loader.load(media_obj.path),
                 side: THREE.DoubleSide
             });
-            
+
             // Combat blurriness at distance
             const anisotropy = renderer.capabilities.getMaxAnisotropy();
             material.map.anisotropy = anisotropy;
