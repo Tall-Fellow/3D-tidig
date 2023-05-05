@@ -86,6 +86,13 @@ class Orbit {
         this.system.add(this.main_orbit);
         this.system.add(this.focus_orbit);
         this.system.add(this.transport_orbit);
+
+        // Add mask used to darken scene when in focus
+        const material = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0 });
+        material.transparent = true;
+        this.opacity_mask = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), material);
+        this.opacity_mask.position.set(0, 0, radius * (focus_dist_mult - 0.1)); // Place right behind focus point
+        this.system.add(this.opacity_mask);
     }
 
     /**
@@ -233,12 +240,13 @@ class Orbit {
         const new_pos = new THREE.Vector3();
         new_pos.copy(this.clone.position).multiplyScalar(this.focus_dst_mult);
         const direction = new_pos.x < 0 ? 1 : -1; // Find the closet travel direction
-        const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction;
+        const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction + Math.PI/14;
 
         // Animated transitions
+        const fade_tween = new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0.6}, 400);
+        new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).chain(fade_tween).start();
         new TWEEN.Tween(this.clone.position).to(new_pos, time/1.5).start();
         new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).start();
-        new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
     }
     
     /**
@@ -413,7 +421,7 @@ function main() {
     const near   = 0.1;
     const far    = 100;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.z = 10;
+    camera.position.z = 10.5;
     camera.up.set(0, 1, 0); // Set camera up direction, needed for lookAt()
     camera.lookAt(0, 0, 0); // Point camera towards origo
 
@@ -559,7 +567,7 @@ function main() {
     // folder_cards.add(card_material, 'shininess', 0, 300, 5);
     // folder_cards.add(card_material, 'side', { Front: THREE.FrontSide, Double: THREE.DoubleSide });
 
-    //orbit.cycleFocus();
+    orbit.cycleFocus();
     // setTimeout(() => {
     //     orbit.cycleFocus();
     // }, 5000);
