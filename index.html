@@ -1,6 +1,7 @@
 <head>
     <title>3D - Tidig</title>
-    <link href="/main.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css"/>
+    <link rel="stylesheet" href="css/main.css" />
     <!-- Get polyfill for importmap since support is lack-luster in certain browsers -->
     <script async src="https://unpkg.com/es-module-shims@1.7.1/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -13,7 +14,35 @@
     </script>
 </head>
 <body>
-    <canvas id="main_canvas"></canvas>
+    <div id="logo">
+      <img src="media/Tidig-logotype-light.svg" />
+    </div>
+    <div>
+      <canvas id="main_canvas"></canvas>
+    </div>
+    <nav id="menu">
+      <div class="swiper">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide"><button type="button">Item 1 with a name</button></div>
+            <div class="swiper-slide"><button type="button">Item 2 with a standard name</button></div>
+            <div class="swiper-slide"><button type="button">Item 3 short</button></div>
+            <div class="swiper-slide"><button type="button">Item 4</button></div>
+            <div class="swiper-slide"><button type="button">Item 5 With a really long name, like wow</button></div>
+            <div class="swiper-slide"><button type="button">Item 6 with a standard name</button></div>
+            <div class="swiper-slide"><button type="button">Item 7 with a name</button></div>
+            <div class="swiper-slide"><button type="button">Item 8 short</button></div>
+            <div class="swiper-slide"><button type="button">Item 9</button></div>
+        </div>
+        <div class="swiper-scrollbar"></div>
+      </div>
+    </nav>
+    <div id="scroll_down_footer">
+      <span>Scroll down for pricing</span>
+    </div>
+
+    <!-- <script src="js/infinite_nav.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
     <script src="https://unpkg.com/@tweenjs/tween.js@20.0.0/dist/tween.umd.js"></script>
-    <script type="module" src="/main.js"></script>
+    <script src="js/infinite_nav.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>

@@ -430,7 +430,7 @@ function main() {
     const light = new THREE.SpotLight(color, intensity);
     light.position.set(0, 2, 12);
     light.target.position.set(0, 0, 0);
-    light.angle = 40*Math.PI/180;
+    light.angle = 60*Math.PI/180;
     light.castShadow = true;
     light.shadow.bias = -0.0003;
     light.penumbra = 0.00;
@@ -466,9 +466,9 @@ function main() {
         const Y_material = new THREE.MeshBasicMaterial({ color: 0x08ff00 });
         const Z_material = new THREE.MeshBasicMaterial({ color: 0x0400ff });
         
-        scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
-        scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
-        scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
+        // scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
+        // scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
+        // scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
     }
     
     // Orbit and cards setup
@@ -484,7 +484,7 @@ function main() {
     sphere.receiveShadow = true;
     sphere.castShadow = true;
 
-    const orbit = new Orbit(6, sphere);
+    const orbit = new Orbit(6.5, sphere);
 
     const card_media_paths = [
         {path: 'media/Group 370.png', width: 1188, height: 1592},
