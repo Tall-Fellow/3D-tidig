@@ -97,6 +97,7 @@ class Orbit {
         this.focus_dst_mult  = focus_dist_mult;
         this.trans_dst_mult  = trans_dist_mult;
         this.clone           = null;
+        this.highlight       = null;
         this.hidden_ents     = [];
         this.system          = new THREE.Group();
         this.main_orbit      = new THREE.Group();
@@ -242,9 +243,18 @@ class Orbit {
         }
     }
 
+    /**
+     * Adds highlight effect to an entity.
+     * 
+     * @param {THREE.Object3D} entity - Entity to highlight.
+     * 
+     * @author Lee Stemkoski
+     * @see https://github.com/stemkoski/stemkoski.github.com/blob/master/Three.js/Outline.html
+     */
     addHighlight(entity) {
         const highlight_material = new THREE.MeshBasicMaterial({ color: 0xFF9B2A, side: THREE.BackSide});
         const highlight_mesh = new THREE.Mesh(entity.geometry, highlight_material);
+        this.highlight = highlight_mesh;
         highlight_mesh.position.copy(entity.position);
         highlight_mesh.rotation.copy(entity.rotation);
         highlight_mesh.translateZ(-0.001);
@@ -278,6 +288,8 @@ class Orbit {
         const new_pos = new THREE.Vector3();
         new_pos.copy(this.clone.position).multiplyScalar(this.focus_dst_mult);
         const direction = new_pos.x < 0 ? 1 : -1; // Find the closet travel direction
+        
+        // By how much the focus orbit needs to rotate from angle 0 
         const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction + Math.PI/14;
 
         // Animated transitions
@@ -287,7 +299,11 @@ class Orbit {
         new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).onComplete(() => {
             focus_zone.style.display = 'block';
         }).start();
-        setTimeout(this.addHighlight, time*1.01, this.clone)
+
+        // Activate highlight effect after card has reached focused position,
+        // delay by some time to facilitate delays in setTimeout
+        const f_bound = this.addHighlight.bind(this); // Bind to the class instance
+        setTimeout(f_bound, (time + 100), this.clone);
     }
     
     /**
@@ -298,6 +314,9 @@ class Orbit {
     _focusToTransport(time = 2000) {
         const entity = this.clone;
         this.transport_orbit.attach(entity); // Also removes from focus orbit group
+
+        // Remove highligt effect
+        this.highlight.removeFromParent();
         
         // Re-calc distance for new orbit
         const new_pos = new THREE.Vector3();
