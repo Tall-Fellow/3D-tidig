@@ -91,6 +91,7 @@ body {
     padding-right: 2rem;
     max-height: 50vh;
     overflow: scroll;
+    overflow-y: auto;
 }
 
 .info_block_return {
