@@ -142,26 +142,26 @@ body {
     background: #d9d9d940;
   }
 
-  @keyframes menu_fade_in {
-    0% {
-        opacity: 0;
-        display: none;
-    }
+@keyframes menu_fade_in {
+0% {
+    opacity: 0;
+    display: none;
+}
 
-    100% {
-        opacity: 1;
-        display: block;
-    }
-  }
-  
-  @keyframes menu_fade_out {
-    0% {
-        opacity: 1;
-        display: block;
-    }
+100% {
+    opacity: 1;
+    display: block;
+}
+}
 
-    100% {
-        opacity: 0;
-        display: none;
-    }
-  }
+@keyframes menu_fade_out {
+0% {
+    opacity: 1;
+    display: block;
+}
+
+100% {
+    opacity: 0;
+    display: none;
+}
+}

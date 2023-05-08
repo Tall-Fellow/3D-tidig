@@ -2,22 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
 
-const info_block = document.querySelector('.info_block');
-const nav_menu = document.querySelector('#menu');
-document.querySelector('.info_block_return').addEventListener("click", exitDetailMode);
-
-function enterDetailMode() {
-    info_block.style.opacity = 1;
-    nav_menu.classList.remove('menu_fade_in');
-    nav_menu.classList.add('menu_fade_out');
-}
-
-function exitDetailMode() {
-    info_block.style.opacity = 0;
-    nav_menu.classList.remove('menu_fade_out');
-    nav_menu.classList.add('menu_fade_in');
-}
-
+// GUI stuff
 class ColorGUIHelper {
     constructor(object, prop) {
       this.object = object;
@@ -74,6 +59,7 @@ function makeXYZGUI(gui, vector3, name, onChangeFn) {
     folder.add(vector3, 'z', -30, 30).onChange(onChangeFn);
     folder.open();
 }
+// End GUI stuff
 
 /**
  * Class representing a perfectly circular orbit with a single stationary central object.
@@ -480,12 +466,50 @@ class PickHelper {
 }
 
 function main() {
+    //--- SETUP ---//
     const canvas = document.querySelector('#main_canvas');
+    const info_block = document.querySelector('.info_block');
+    const nav_menu = document.querySelector('#menu');
+    
+    // Exit detail mode transition setup
+    document.querySelector('.info_block_return').addEventListener('click', exitDetailMode);
+    
+    // Swiperjs setup
+    const swiper = new Swiper('.swiper', {
+        direction: 'vertical',
+        loop: true,
+        slidesPerView: 4,
+        mousewheel: {},
+        scrollbar: {
+            el: '.swiper-scrollbar',
+            draggable: true,
+            snapOnRelease: true,
+        },
+        keyboard: {
+            enabled: true,
+        }
+    });
+
+    // Transition functions
+    function enterDetailMode() {
+        info_block.style.opacity = 1;
+        nav_menu.classList.remove('menu_fade_in');
+        nav_menu.classList.add('menu_fade_out');
+    }
+    
+    function exitDetailMode() {
+        info_block.style.opacity = 0;
+        nav_menu.classList.remove('menu_fade_out');
+        nav_menu.classList.add('menu_fade_in');
+    }
+    
+    //--- START OF THREE.JS PORTION ---//
+    
     // Takes data and renders onto canvas
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
     renderer.shadowMap.enabled = true;
     renderer.toneMapping = THREE.NoToneMapping;
-
+    
     // Camera setup
     const fov    = 75;
     const aspect = 2;
