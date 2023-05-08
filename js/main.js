@@ -2,6 +2,26 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
 
+const info_block = document.querySelector('.info_block');
+const focus_zone = document.querySelector('#focus_zone');
+const nav_menu = document.querySelector('#menu');
+focus_zone.addEventListener("click", enterDetailMode);
+document.querySelector('.info_block_return').addEventListener("click", exitDetailMode);
+
+function enterDetailMode() {
+    info_block.style.opacity = 1;
+    nav_menu.style.opacity = 0;
+    setTimeout(() => {
+        nav_menu.style.display = 'none';
+    }, 600);
+}
+
+function exitDetailMode() {
+    info_block.style.opacity = 0;
+    nav_menu.style.opacity = 1;
+    nav_menu.style.display = 'block'
+}
+
 class ColorGUIHelper {
     constructor(object, prop) {
       this.object = object;
@@ -222,6 +242,24 @@ class Orbit {
         }
     }
 
+    addHighlight(entity) {
+        const highlight_material = new THREE.MeshBasicMaterial({ color: 0xFF9B2A, side: THREE.BackSide});
+        const highlight_mesh = new THREE.Mesh(entity.geometry, highlight_material);
+        highlight_mesh.position.copy(entity.position);
+        highlight_mesh.rotation.copy(entity.rotation);
+        highlight_mesh.translateZ(-0.001);
+        highlight_mesh.rotateY(Math.PI);
+        entity.parent.add(highlight_mesh);
+
+        const max_scale = highlight_mesh.scale.clone();
+        max_scale.multiplyScalar(1.015); // Upper bound of highligt effect
+        new TWEEN.Tween(highlight_mesh.scale)
+        .to(max_scale, 2000)
+        .repeat(Infinity)
+        .yoyo(true)
+        .start();
+    }
+
     /**
      * Takes an entity from the main orbit and clones it, the clone is then brought to the focus point.
      * 
@@ -243,10 +281,13 @@ class Orbit {
         const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction + Math.PI/14;
 
         // Animated transitions
-        const fade_tween = new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0.6}, 400);
-        new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).chain(fade_tween).start();
+        // const fade_tween = new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0.6}, 600);
+        new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
         new TWEEN.Tween(this.clone.position).to(new_pos, time/1.5).start();
-        new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).start();
+        new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).onComplete(() => {
+            focus_zone.style.display = 'block';
+        }).start();
+        setTimeout(this.addHighlight, time*1.01, this.clone)
     }
     
     /**

@@ -31,6 +31,7 @@ body {
     height: 100vh;
     padding-left: 3vw;
     background: linear-gradient(90deg, #192633, transparent);
+    transition: opacity 600ms;
 }
 
 .swiper {
@@ -67,13 +68,24 @@ body {
     visibility: hidden;
 }
 
+#focus_zone {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 50vw;
+    width: 50vw;
+    height: 100vh;
+    cursor: pointer;
+}
+
 .info_block {
     position: absolute;
     top: 10rem;
     left: 2rem;
     width: 45vw;
     color: #e3e3e3;
-    visibility: hidden;
+    opacity: 0;
+    transition: opacity 600ms linear 300ms;
 }
 
 .info_block_content {
