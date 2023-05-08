@@ -3,9 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
 
 const info_block = document.querySelector('.info_block');
-const focus_zone = document.querySelector('#focus_zone');
 const nav_menu = document.querySelector('#menu');
-focus_zone.addEventListener("click", enterDetailMode);
 document.querySelector('.info_block_return').addEventListener("click", exitDetailMode);
 
 function enterDetailMode() {
@@ -293,12 +291,10 @@ class Orbit {
         const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction + Math.PI/14;
 
         // Animated transitions
-        // const fade_tween = new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0.6}, 600);
+        const fade_tween = new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0.6}, 600);
         new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
         new TWEEN.Tween(this.clone.position).to(new_pos, time/1.5).start();
-        new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).onComplete(() => {
-            focus_zone.style.display = 'block';
-        }).start();
+        new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).chain(fade_tween).start();
 
         // Activate highlight effect after card has reached focused position,
         // delay by some time to facilitate delays in setTimeout
@@ -465,6 +461,23 @@ class CardMesh extends THREE.Mesh {
         else {
             this.speed += this.acceleration;
         }
+    }
+}
+
+class PickHelper {
+    constructor() {
+      this.raycaster = new THREE.Raycaster();
+    }
+
+    pick(normalized_position, scene, camera) {   
+      // cast a ray through the frustum
+      this.raycaster.setFromCamera(normalized_position, camera);
+      // get the list of objects the ray intersected
+      const intersectedObjects = this.raycaster.intersectObjects(scene.children);
+      if (intersectedObjects.length) {
+        // pick the first object. It's the closest one
+        return intersectedObjects[0].object;
+      }
     }
 }
 
@@ -653,6 +666,13 @@ function main() {
     //     orbit.cycleFocus();
     // }, 40000);
     
+    // Click object picker setup
+    const pick_helper = new PickHelper();
+    const pick_pos = {x: 0, y: 0};
+
+    const f_bound = handleClick.bind(orbit);
+    window.addEventListener('click', f_bound);
+
     /**
      * Creates a card for each media object. 
      * 
@@ -725,6 +745,25 @@ function main() {
         }
 
         return needResize;
+    }
+
+    function getCanvasRelativePosition(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * canvas.width  / rect.width,
+            y: (event.clientY - rect.top ) * canvas.height / rect.height,
+        };
+    }
+    
+    function handleClick(event) {
+        const pos = getCanvasRelativePosition(event);
+        pick_pos.x = (pos.x / canvas.width ) *  2 - 1;
+        pick_pos.y = (pos.y / canvas.height) * -2 + 1;  // note we flip Y
+
+        const picked = pick_helper.pick(pick_pos, scene, camera);
+        if (picked.id === this.clone.id) {
+            enterDetailMode();
+        }
     }
 
     /**

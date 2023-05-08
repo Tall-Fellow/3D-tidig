@@ -68,16 +68,6 @@ body {
     visibility: hidden;
 }
 
-#focus_zone {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 50vw;
-    width: 50vw;
-    height: 100vh;
-    cursor: pointer;
-}
-
 .info_block {
     position: absolute;
     top: 10rem;
