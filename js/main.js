@@ -8,16 +8,14 @@ document.querySelector('.info_block_return').addEventListener("click", exitDetai
 
 function enterDetailMode() {
     info_block.style.opacity = 1;
-    nav_menu.style.opacity = 0;
-    setTimeout(() => {
-        nav_menu.style.display = 'none';
-    }, 600);
+    nav_menu.classList.remove('menu_fade_in');
+    nav_menu.classList.add('menu_fade_out');
 }
 
 function exitDetailMode() {
     info_block.style.opacity = 0;
-    nav_menu.style.opacity = 1;
-    nav_menu.style.display = 'block'
+    nav_menu.classList.remove('menu_fade_out');
+    nav_menu.classList.add('menu_fade_in');
 }
 
 class ColorGUIHelper {

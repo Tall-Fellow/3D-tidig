@@ -31,7 +31,16 @@ body {
     height: 100vh;
     padding-left: 3vw;
     background: linear-gradient(90deg, #192633, transparent);
-    transition: opacity 600ms;
+}
+
+.menu_fade_in {
+    animation: menu_fade_in 600ms;
+    animation-fill-mode: forwards;
+}
+
+.menu_fade_out {
+    animation: menu_fade_out 600ms;
+    animation-fill-mode: forwards;
 }
 
 .swiper {
@@ -75,7 +84,7 @@ body {
     width: 45vw;
     color: #e3e3e3;
     opacity: 0;
-    transition: opacity 600ms linear 300ms;
+    transition: opacity 600ms;
 }
 
 .info_block_content {
@@ -131,4 +140,28 @@ body {
   .styled_scrollbar::-webkit-scrollbar-track {
     border-radius: 10px;
     background: #d9d9d940;
+  }
+
+  @keyframes menu_fade_in {
+    0% {
+        opacity: 0;
+        display: none;
+    }
+
+    100% {
+        opacity: 1;
+        display: block;
+    }
+  }
+  
+  @keyframes menu_fade_out {
+    0% {
+        opacity: 1;
+        display: block;
+    }
+
+    100% {
+        opacity: 0;
+        display: none;
+    }
   }
