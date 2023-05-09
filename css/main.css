@@ -31,16 +31,7 @@ body {
     height: 100vh;
     padding-left: 3vw;
     background: linear-gradient(90deg, #192633, transparent);
-}
-
-.menu_fade_in {
-    animation: menu_fade_in 600ms;
-    animation-fill-mode: forwards;
-}
-
-.menu_fade_out {
-    animation: menu_fade_out 600ms;
-    animation-fill-mode: forwards;
+    transition: opacity 600ms;
 }
 
 .swiper {
@@ -91,7 +82,6 @@ body {
     padding-right: 2rem;
     max-height: 50vh;
     overflow: scroll;
-    overflow-y: auto;
 }
 
 .info_block_return {
@@ -142,27 +132,3 @@ body {
     border-radius: 10px;
     background: #d9d9d940;
   }
-
-@keyframes menu_fade_in {
-0% {
-    opacity: 0;
-    display: none;
-}
-
-100% {
-    opacity: 1;
-    display: block;
-}
-}
-
-@keyframes menu_fade_out {
-0% {
-    opacity: 1;
-    display: block;
-}
-
-100% {
-    opacity: 0;
-    display: none;
-}
-}

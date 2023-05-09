@@ -472,7 +472,7 @@ function main() {
     const nav_menu = document.querySelector('#menu');
     
     // Exit detail mode transition setup
-    document.querySelector('.info_block_return').addEventListener('click', exitDetailMode);
+    document.querySelector('.info_block_return').addEventListener('click', exitDetailMode);    
     
     // Swiperjs setup
     const swiper = new Swiper('.swiper', {
@@ -490,21 +490,33 @@ function main() {
         }
     });
 
+    swiper.on('keyPress', (event, key) => {
+        // Down
+        if (key == 40) {
+            orbit.cycleFocus();
+        }
+
+        // Up
+        else if (key == 38) {
+            orbit.cycleFocus(true);
+        }
+    });
+
     // Transition functions
     function enterDetailMode() {
         info_block.style.opacity = 1;
-        nav_menu.classList.remove('menu_fade_in');
-        nav_menu.classList.add('menu_fade_out');
+        nav_menu.style.opacity = 0;
+        swiper.disable();
     }
     
     function exitDetailMode() {
         info_block.style.opacity = 0;
-        nav_menu.classList.remove('menu_fade_out');
-        nav_menu.classList.add('menu_fade_in');
+        nav_menu.style.opacity = 1;
+        swiper.enable();
     }
     
     //--- START OF THREE.JS PORTION ---//
-    
+
     // Takes data and renders onto canvas
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
     renderer.shadowMap.enabled = true;
@@ -661,32 +673,6 @@ function main() {
     // folder_cards.addColor(new ColorGUIHelper(card_material, 'emissive'), 'value').name('emissive');
     // folder_cards.add(card_material, 'shininess', 0, 300, 5);
     // folder_cards.add(card_material, 'side', { Front: THREE.FrontSide, Double: THREE.DoubleSide });
-
-    orbit.cycleFocus();
-    // setTimeout(() => {
-    //     orbit.cycleFocus();
-    // }, 5000);
-    // setTimeout(() => {
-    //     orbit.cycleFocus();
-    // }, 10000);
-    // setTimeout(() => {
-    //     orbit.cycleFocus();
-    // }, 15000);
-    // setTimeout(() => {
-    //     orbit.cycleFocus();
-    // }, 20000);
-    // setTimeout(() => {
-    //     orbit.cycleFocus();
-    // }, 25000);
-    // setTimeout(() => {
-    //     orbit.cycleFocus();
-    // }, 30000);
-    // setTimeout(() => {
-    //     orbit.cycleFocus();
-    // }, 35000);
-    // setTimeout(() => {
-    //     orbit.cycleFocus();
-    // }, 40000);
     
     // Click object picker setup
     const pick_helper = new PickHelper();
