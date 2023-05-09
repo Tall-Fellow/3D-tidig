@@ -536,7 +536,7 @@ function main() {
     camera.lookAt(0, 0, 0); // Point camera towards origo
 
     // Controls setup
-    const controls = new OrbitControls(camera, renderer.domElement);
+    // const controls = new OrbitControls(camera, renderer.domElement);
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -797,7 +797,7 @@ function main() {
         }
 
         orbit.update(time*0.1, true);
-        controls.update();
+        //controls.update();
         
         renderer.render(scene, camera);
     }
