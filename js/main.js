@@ -489,6 +489,7 @@ function main() {
         },
         keyboard: {
             enabled: true,
+            pageUpDown: false,
         }
     });
 
@@ -767,7 +768,7 @@ function main() {
     
     function handleClick(event) {
         if (this.clone === null) { return; }
-        
+
         const pos = getCanvasRelativePosition(event);
         pick_pos.x = (pos.x / canvas.width ) *  2 - 1;
         pick_pos.y = (pos.y / canvas.height) * -2 + 1;  // note we flip Y

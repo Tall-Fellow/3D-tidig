@@ -48,6 +48,7 @@ body {
     justify-content: left;
     align-items: center;
     text-align: center;
+    outline: none;
 }
 
 .swiper-slide button {
@@ -58,6 +59,7 @@ body {
     font-weight: lighter;
     text-align: left;
     color: #e3e3e3;
+    outline: none;
 }
 
 .swiper-slide-active button {
