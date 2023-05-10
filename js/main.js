@@ -185,51 +185,20 @@ class Orbit {
     }
 
     /**
-     * Cycles the focused entity.
-     * 
-     * @param {boolean} backwards - Sets cycle direction.
-     */
-    cycleFocus(backwards = false) {
-        const entities = this.main_orbit.children;
-        let toFocus;
-
-        // No active focus item
-        if (this.clone === null && entities.length > 0) {
-            toFocus = backwards ? entities[entities.length-1] : entities[0];
-        }
-        
-        else {
-            let f_index = entities.indexOf(this.hidden_ents[this.hidden_ents.length-1].entity); // Focused is always last in hidden_ents
-            f_index = backwards ? f_index-1 : f_index+1;
-
-            if (f_index == entities.length) {
-                f_index = 0
-            }
-            
-            else if (f_index < 0) {
-                f_index = entities.length-1;
-            }
-
-            toFocus = entities[f_index];
-        }
-
-        this.setFocus(toFocus);
-    }
-
-    /**
      * Set 'entity' as new focused entity and returns old focused entity to its position.
      * 
      * @param {THREE.Object3D} entity - The new entity to focus, if 'null' nothing will be focused but 
      * the old focused object will be returned to its position.
      */
-    setFocus(entity) {
+    setFocus(id) {
         // If obj already is focused, return it through the transport orbit
         if (this.clone !== null) {
             this._focusToTransport();
         }
 
         // Send to focus orbit while hiding real obj in main orbit
-        if (entity !== null) {
+        if (Number.isInteger(id)) {
+            const entity = this.main_orbit.children.find(obj => obj.id === id );
             this._bringToFront(entity);
         }
 
@@ -504,7 +473,7 @@ function main() {
     camera.lookAt(0, 0, 0); // Point camera towards origo
 
     // Controls setup
-    // const controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -653,18 +622,8 @@ function main() {
         const parent = document.querySelector('.swiper-wrapper');
         const card_ids = orbit.getIDs();
         card_ids.forEach(id => {
-            const el_outer = document.createElement('div');
-            el_outer.classList.add('swiper-slide');
-
-            const el_inner = document.createElement('button');
-            el_inner.type = 'button';
-            el_inner.textContent = id;
-
-            el_outer.appendChild(el_inner);
-            parent.appendChild(el_outer);
-
-            // el = `<div class="swiper-slide"><button type="button">${id}</button></div>`
-            // parent.insertAdjacentHTML('beforeend', el);
+            const html = `<div class="swiper-slide" data-id="${id}"><button type="button">Card id ${id}</button></div>`
+            parent.insertAdjacentHTML('beforeend', html);
         });
 
         // Setup Swiper.js
@@ -687,7 +646,7 @@ function main() {
         });
     
         swiper.on('slideChangeTransitionEnd', (event) => {
-            //orbit.setFocus(null);
+            orbit.setFocus(Number(event.clickedSlide.dataset.id));
         });
 
         return swiper;
@@ -816,7 +775,7 @@ function main() {
         }
 
         orbit.update(time*0.1, true);
-        //controls.update();
+        controls.update();
         
         renderer.render(scene, camera);
     }
