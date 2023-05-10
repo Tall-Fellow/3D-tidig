@@ -3,6 +3,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
 
 // GUI stuff
+function makeXYZGUI(gui, vector3, name, onChangeFn) {
+    const folder = gui.addFolder(name);
+    folder.add(vector3, 'x', -30, 30).onChange(onChangeFn);
+    folder.add(vector3, 'y', -30, 30).onChange(onChangeFn);
+    folder.add(vector3, 'z', -30, 30).onChange(onChangeFn);
+    folder.open();
+}
+
 class ColorGUIHelper {
     constructor(object, prop) {
       this.object = object;
@@ -51,14 +59,6 @@ class MinMaxGUIHelper {
       this.min = this.min;  // this will call the min setter
     }
 }
-
-function makeXYZGUI(gui, vector3, name, onChangeFn) {
-    const folder = gui.addFolder(name);
-    folder.add(vector3, 'x', -30, 30).onChange(onChangeFn);
-    folder.add(vector3, 'y', -30, 30).onChange(onChangeFn);
-    folder.add(vector3, 'z', -30, 30).onChange(onChangeFn);
-    folder.open();
-}
 // End GUI stuff
 
 /**
@@ -99,10 +99,24 @@ class Orbit {
     }
 
     /**
-     * @returns THREE.Group representing the orbit system
+     * @returns THREE.Group representing the orbit system.
      */
     getSystem() {
         return this.system;
+    }
+
+    /**
+     * Get all orbit entities id's.
+     * 
+     * @returns Array of ids for every entity in orbit.
+     */
+    getIDs() {
+        const ids = [];
+        this.main_orbit.children.forEach(obj => {
+            ids.push(obj.id);
+        });
+
+        return ids;
     }
 
     /**
@@ -470,56 +484,10 @@ function main() {
     const canvas = document.querySelector('#main_canvas');
     const info_block = document.querySelector('.info_block');
     const nav_menu = document.querySelector('#menu');
-    
+
     // Exit detail mode transition setup
     document.querySelector('.info_block_return').addEventListener('click', exitDetailMode);    
     
-    // Swiperjs setup
-    const swiper = new Swiper('.swiper', {
-        direction: 'vertical',
-        loop: true,
-        slidesPerView: 4,
-        grabCursor: true,
-        slideToClickedSlide: true,
-        mousewheel: {},
-        scrollbar: {
-            el: '.swiper-scrollbar',
-            draggable: true,
-            snapOnRelease: true,
-        },
-        keyboard: {
-            enabled: true,
-            pageUpDown: false,
-        }
-    });
-
-    swiper.on('keyPress', (event, key) => {
-        // Down
-        if (key == 40) {
-            orbit.cycleFocus();
-        }
-
-        // Up
-        else if (key == 38) {
-            orbit.cycleFocus(true);
-        }
-    });
-
-    // Transition functions
-    function enterDetailMode() {
-        info_block.style.opacity = 1;
-        nav_menu.style.opacity = 0;
-        swiper.disable();
-    }
-    
-    function exitDetailMode() {
-        info_block.style.opacity = 0;
-        nav_menu.style.opacity = 1;
-        swiper.enable();
-    }
-    
-    //--- START OF THREE.JS PORTION ---//
-
     // Takes data and renders onto canvas
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
     renderer.shadowMap.enabled = true;
@@ -621,22 +589,7 @@ function main() {
     scene.add(orbit.getSystem());
 
     // GUI setup
-    function updateLight() {
-        light.target.updateMatrixWorld();
-        //lightHelper.update();
-        //lightHelper2.update();
-    }
     updateLight();
-
-    function updateCamera() {
-        // update the light target's matrixWorld because it's needed by the helper
-        light.target.updateMatrixWorld();
-        //lightHelper.update();
-        // update the light's shadow camera's projection matrix
-        light.shadow.camera.updateProjectionMatrix();
-        // and now update the camera helper we're using to show the light's shadow camera
-        cameraHelper.update();
-    }
     updateCamera();
 
     const gui = new GUI();
@@ -684,6 +637,62 @@ function main() {
     const f_bound = handleClick.bind(orbit);
     window.addEventListener('click', f_bound);
 
+    // Vertical nav menu setup using Swiper.js
+    const swiper = setupMenu();
+
+    requestAnimationFrame(render)
+
+    
+
+    //--- FUNCTIONS ---//
+
+
+
+    function setupMenu() {
+        // Build HTML
+        const parent = document.querySelector('.swiper-wrapper');
+        const card_ids = orbit.getIDs();
+        card_ids.forEach(id => {
+            const el_outer = document.createElement('div');
+            el_outer.classList.add('swiper-slide');
+
+            const el_inner = document.createElement('button');
+            el_inner.type = 'button';
+            el_inner.textContent = id;
+
+            el_outer.appendChild(el_inner);
+            parent.appendChild(el_outer);
+
+            // el = `<div class="swiper-slide"><button type="button">${id}</button></div>`
+            // parent.insertAdjacentHTML('beforeend', el);
+        });
+
+        // Setup Swiper.js
+        const swiper = new Swiper('.swiper', {
+            direction: 'vertical',
+            loop: true,
+            slidesPerView: Math.floor(card_ids.length/2), // Must be >= Menu items/2
+            grabCursor: true,
+            slideToClickedSlide: true,
+            mousewheel: {},
+            scrollbar: {
+                el: '.swiper-scrollbar',
+                draggable: true,
+                snapOnRelease: true,
+            },
+            keyboard: {
+                enabled: true,
+                pageUpDown: false,
+            }
+        });
+    
+        swiper.on('slideChangeTransitionEnd', (event) => {
+            //orbit.setFocus(null);
+        });
+
+        return swiper;
+    }
+
     /**
      * Creates a card for each media object. 
      * 
@@ -717,30 +726,6 @@ function main() {
     }
 
     /**
-     * Creates a flat 2D plane with rounded edges.
-     * 
-     * @author Liron Toledo, with minor changes by Jesper J. Oskarsson
-     * @see https://stackoverflow.com/questions/65567873/create-a-plane-with-curved-edges-using-planegeometry-three-js
-     */
-    function getRoundedEdgePlaneGeometry(width, height, radius) {
-        const x = -width/2;
-        const y = -height/2;
-
-        const shape = new THREE.Shape();
-        shape.moveTo(x, y + radius);
-        shape.lineTo(x, y + height - radius);
-        shape.quadraticCurveTo(x, y + height, x + radius, y + height);
-        shape.lineTo(x + width - radius, y + height);
-        shape.quadraticCurveTo(x + width, y + height, x + width, y + height - radius);
-        shape.lineTo(x + width, y + radius);
-        shape.quadraticCurveTo(x + width, y, x + width - radius, y);
-        shape.lineTo(x + radius, y);
-        shape.quadraticCurveTo(x, y, x, y + radius);
-
-        return new THREE.ShapeGeometry(shape, 6);
-    }
-
-    /**
      * Resizes canvas if needed, fixes blocky rendering issues.
      * 
      * @param {THREE.WebGLRenderer} renderer - The Three.js renderer object.
@@ -758,6 +743,7 @@ function main() {
         return needResize;
     }
 
+    // Used for Three.js clicking
     function getCanvasRelativePosition(event) {
         const rect = canvas.getBoundingClientRect();
         return {
@@ -766,6 +752,7 @@ function main() {
         };
     }
     
+    // Used for Three.js clicking
     function handleClick(event) {
         if (this.clone === null) { return; }
 
@@ -777,6 +764,38 @@ function main() {
         if (picked.id === this.clone.id) {
             enterDetailMode();
         }
+    }
+
+    // Used for lil.gui
+    function updateCamera() {
+        // update the light target's matrixWorld because it's needed by the helper
+        light.target.updateMatrixWorld();
+        //lightHelper.update();
+        // update the light's shadow camera's projection matrix
+        light.shadow.camera.updateProjectionMatrix();
+        // and now update the camera helper we're using to show the light's shadow camera
+        cameraHelper.update();
+    }
+
+    // Used for lil.gui
+    function updateLight() {
+        light.target.updateMatrixWorld();
+        //lightHelper.update();
+        //lightHelper2.update();
+    }
+
+    // Used for menu transitions
+    function enterDetailMode() {
+        info_block.style.opacity = 1;
+        nav_menu.style.opacity = 0;
+        swiper.disable();
+    }
+    
+    // Used for menu transitions
+    function exitDetailMode() {
+        info_block.style.opacity = 0;
+        nav_menu.style.opacity = 1;
+        swiper.enable();
     }
 
     /**
@@ -801,8 +820,6 @@ function main() {
         
         renderer.render(scene, camera);
     }
-
-    requestAnimationFrame(render)
 }
 
 main();
