@@ -278,8 +278,9 @@ class Orbit {
         const entity = this.clone;
         this.transport_orbit.attach(entity); // Also removes from focus orbit group
 
-        // Remove highligt effect
+        // Remove highligt and bg fade effect
         this.highlight.removeFromParent();
+        new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0}, 600).start();
         
         // Re-calc distance for new orbit
         const new_pos = new THREE.Vector3();
@@ -449,7 +450,6 @@ class PickHelper {
 }
 
 function main() {
-    //--- SETUP ---//
     const canvas = document.querySelector('#main_canvas');
     const info_block = document.querySelector('.info_block');
     const nav_menu = document.querySelector('#menu');
@@ -645,6 +645,7 @@ function main() {
             }
         });
     
+        // Update focused Three.js item to match active slide
         swiper.on('slideChangeTransitionEnd', (event) => {
             orbit.setFocus(Number(event.clickedSlide.dataset.id));
         });
