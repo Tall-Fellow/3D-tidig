@@ -161,7 +161,7 @@ class Orbit {
 
         this.main_orbit.children.forEach(child => {
             try {
-                // child.update();
+                child.update();
             }
             
             catch (error) {
@@ -210,7 +210,7 @@ class Orbit {
      * @see https://github.com/stemkoski/stemkoski.github.com/blob/master/Three.js/Outline.html
      */
     addHighlight(entity) {
-        const highlight_material = new THREE.MeshBasicMaterial({ color: 0xFF9B2A, side: THREE.DoubleSide});
+        const highlight_material = new THREE.MeshBasicMaterial({ color: 0xFF9B2A, side: THREE.FrontSide});
         const highlight_mesh = new THREE.Mesh(entity.geometry, highlight_material);
         entity.add(highlight_mesh);
         highlight_mesh.translateZ(-0.001);
@@ -238,6 +238,7 @@ class Orbit {
         // Calc new position in focus orbit
         const new_pos = new THREE.Vector3();
         new_pos.copy(this.focused.position).multiplyScalar(this.focus_dst_mult);
+        new_pos.setY(0);
         
         // Find the shortest travel direction and by how much to rotate
         // focus orbit from angle 0 to the focus point
@@ -267,7 +268,7 @@ class Orbit {
     _focusedToOrbit(time = 2000) {
         const entity = this.focused;
         entity.clear(); // Remove children (highlight)
-        
+
         // Remove entity from focus orbit and temporarily change orbit to 
         // non-rotating system orbit for the transition
         this.system.attach(entity);
@@ -534,7 +535,7 @@ function main() {
     const pick_pos = {x: 0, y: 0};
 
     const f_bound = handleClick.bind(orbit);
-    //window.addEventListener('click', f_bound);
+    window.addEventListener('click', f_bound);
 
     // Vertical nav menu setup using Swiper.js
     const swiper = setupMenu();
@@ -651,7 +652,7 @@ function main() {
         pick_pos.y = (pos.y / canvas.height) * -2 + 1;  // note we flip Y
 
         const picked = pick_helper.pick(pick_pos, scene, camera);
-        if (picked.id === this.focused.clone.id) {
+        if (picked.id === this.focused.id) {
             enterDetailMode();
         }
     }
