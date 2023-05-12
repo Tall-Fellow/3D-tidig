@@ -78,8 +78,8 @@ class Orbit {
         this.center_obj      = center_obj;
         this.focus_dst_mult  = focus_dist_mult;
         this.trans_dst_mult  = trans_dist_mult;
-        this.clone           = null;
-        this.highlight       = null;
+        this.focused         = null;
+        //this.highlight       = null;
         this.hidden_ents     = [];
         this.system          = new THREE.Group();
         this.main_orbit      = new THREE.Group();
@@ -96,6 +96,21 @@ class Orbit {
         this.opacity_mask = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), material);
         this.opacity_mask.position.set(0, 0, radius * (focus_dist_mult - 0.1)); // Place right behind focus point
         this.system.add(this.opacity_mask);
+
+        // Debug
+        this.dup_main_orbit = new THREE.Group();
+        this.system.add(this.dup_main_orbit);
+        this.dup_transport_orbit = new THREE.Group();
+        this.system.add(this.dup_transport_orbit);
+        const fgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
+        const fmaterial = new THREE.MeshBasicMaterial({ color: 0x66327f });
+        this.focus_orbit.add(new THREE.Mesh(fgeometry, fmaterial));
+        const tgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
+        const tmaterial = new THREE.MeshBasicMaterial({ color: 0xb9be38 });
+        this.dup_transport_orbit.add(new THREE.Mesh(tgeometry, tmaterial));
+        const mgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
+        const mmaterial = new THREE.MeshBasicMaterial({ color: 0x38bebd });
+        this.dup_main_orbit.add(new THREE.Mesh(mgeometry, mmaterial));
     }
 
     /**
@@ -151,11 +166,12 @@ class Orbit {
      * of orbit entities.
      * 
      * @param {number} rotation - An angle in radians, set the rotation of the orbit entities.
-     * @param {boolean} counter_rotate - If 'true', orbit entities rotation is canceled.
      */
-    update(rotation, counter_rotate = false) {
+    update(rotation) {
         this.main_orbit.rotation.y = rotation;
+        this.dup_main_orbit.rotation.y = rotation;
         this.transport_orbit.rotation.y = rotation*3;
+        this.dup_transport_orbit.rotation.y = rotation*3;
 
         this.main_orbit.children.forEach(child => {
             try {
@@ -165,46 +181,53 @@ class Orbit {
             catch (error) {
             }
 
-            if (counter_rotate && !child.freeze_rotation) {
+            if (!child.freeze_rotation) {
                 child.rotation.y = -rotation;
             }
 
             // When a child is transferring from transport to main orbit
-            if (child.freeze_rotation) {
-                child.rotation.y = -rotation*4;
-                if (this._isDockRotDone(child)) {
-                    child.freeze_rotation = false;
-                }
-            }
+            // else {
+            //     child.rotation.y = -rotation*4;
+            //     if (this._isDockRotDone(child)) {
+            //         child.freeze_rotation = false;
+            //     }
+            // }
         });
 
         // Check if transport orbit entities are close enough to dock with main orbit
         this.transport_orbit.children.forEach(child => {
-            this._tryDock(child);
+            child.rotation.y = -rotation*3;
+            //this._tryDock(child);
         });
     }
 
     /**
      * Set 'entity' as new focused entity and returns old focused entity to its position.
      * 
-     * @param {THREE.Object3D} entity - The new entity to focus, if 'null' nothing will be focused but 
+     * @param {Number} id - The new entity to focus, if 'null' nothing will be focused but 
      * the old focused object will be returned to its position.
      */
     setFocus(id) {
-        // If obj already is focused, return it through the transport orbit
-        if (this.clone !== null) {
-            this._focusToTransport();
+        try {
+            if (id === this.focused.original.id) {
+                // Item already focused, abort
+                return;
+            }
+
+            else {
+                // Another item is already focused, un-focus it and then proceed
+                this._focusedToTransport();
+            }
+        }
+        
+        catch (error) {
+            // No focused entity found, ok to proceed
         }
 
-        // Send to focus orbit while hiding real obj in main orbit
-        if (Number.isInteger(id)) {
-            const entity = this.main_orbit.children.find(obj => obj.id === id );
+        // Find entity and bring to focus point if found
+        const entity = this.main_orbit.children.find(obj => obj.id === id);
+        if (entity !== undefined) {
             this._bringToFront(entity);
-        }
-
-        // No new focus entity
-        else {
-            this.focused.clone = null;
         }
     }
 
@@ -217,17 +240,17 @@ class Orbit {
      * @see https://github.com/stemkoski/stemkoski.github.com/blob/master/Three.js/Outline.html
      */
     addHighlight(entity) {
-        const highlight_material = new THREE.MeshBasicMaterial({ color: 0xFF9B2A, side: THREE.BackSide});
+        const highlight_material = new THREE.MeshBasicMaterial({ color: 0xFF9B2A, side: THREE.DoubleSide});
         const highlight_mesh = new THREE.Mesh(entity.geometry, highlight_material);
-        this.highlight = highlight_mesh;
-        highlight_mesh.position.copy(entity.position);
-        highlight_mesh.rotation.copy(entity.rotation);
+        //this.highlight = highlight_mesh;
+        // highlight_mesh.position.copy(entity.position);
+        // highlight_mesh.rotation.copy(entity.rotation);
+        // highlight_mesh.rotateY(Math.PI);
+        // this.focus_orbit.add(highlight_mesh);
+        entity.add(highlight_mesh);
         highlight_mesh.translateZ(-0.001);
-        highlight_mesh.rotateY(Math.PI);
-        entity.parent.add(highlight_mesh);
 
-        const max_scale = highlight_mesh.scale.clone();
-        max_scale.multiplyScalar(1.015); // Upper bound of highligt effect
+        const max_scale = highlight_mesh.scale.clone().multiplyScalar(1.015); // Upper bound of highligt effect
         new TWEEN.Tween(highlight_mesh.scale)
         .to(max_scale, 2000)
         .repeat(Infinity)
@@ -242,31 +265,37 @@ class Orbit {
      * @param {number} time - Animation time in milliseconds.
      */
     _bringToFront(entity, time = 3000) {
-        this.clone = entity.clone();
-        entity.parent.add(this.clone); // To get right position & rotation data
-        this.focus_orbit.attach(this.clone); // Drops old parent (main orbit)
-
-        // Hide original entity (still in main orbit)
+        // Clone entity & hide original
+        this.focused = { clone: entity.clone(false), original: entity};
         entity.visible = false;
         this.hidden_ents.push(entity);
 
-        const new_pos = new THREE.Vector3();
-        new_pos.copy(this.clone.position).multiplyScalar(this.focus_dst_mult);
-        const direction = new_pos.x < 0 ? 1 : -1; // Find the closet travel direction
-        
-        // By how much the focus orbit needs to rotate from angle 0 
-        const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction + Math.PI/14;
+        // Change orbit for cloned entity
+        this.main_orbit.add(this.focused.clone); // To get right position & rotation data
+        this.focus_orbit.attach(this.focused.clone); // Drops old parent (main orbit)
 
-        // Animated transitions
-        const fade_tween = new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0.6}, 600);
+        // Calc new position in focus orbit
+        const new_pos = new THREE.Vector3();
+        new_pos.copy(this.focused.clone.position).multiplyScalar(this.focus_dst_mult);
+        
+        // Find the shortest travel direction and by how much to rotate
+        // focus orbit from angle 0 to the focus point
+        const direction = new_pos.x < 0 ? 1 : -1;
+        const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction;
+
+        const fade_tween = new TWEEN.Tween(this.opacity_mask.material)
+        .to({opacity: 0.6}, 600); // Used to mask scene behind focused entity
+        
+        // Reposition entity to focus point
         new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
-        new TWEEN.Tween(this.clone.position).to(new_pos, time/1.5).start();
-        new TWEEN.Tween(this.clone.rotation).to({y: -angle}, time).chain(fade_tween).start();
+        new TWEEN.Tween(this.focused.clone.rotation).to({y: -angle}, time).start(); // Counter-rotate entity
+        //new TWEEN.Tween(this.focused.clone.rotation).to({y: -angle}, time).chain(fade_tween).start();
+        new TWEEN.Tween(this.focused.clone.position).to(new_pos, time/1.5).start();
 
         // Activate highlight effect after card has reached focused position,
         // delay by some time to facilitate delays in setTimeout
         const f_bound = this.addHighlight.bind(this); // Bind to the class instance
-        setTimeout(f_bound, (time + 100), this.clone);
+        setTimeout(f_bound, (time + 100), this.focused.clone);
     }
     
     /**
@@ -274,26 +303,30 @@ class Orbit {
      * 
      * @param {number} time - Animation time in milliseconds. 
      */
-    _focusToTransport(time = 2000) {
-        const entity = this.clone;
-        this.transport_orbit.attach(entity); // Also removes from focus orbit group
+    _focusedToTransport(time = 2000) {
+        // Clone focused entity without its children (so no highlight)
+        const entity = this.focused.clone.clone(false);
+        this.transport_orbit.attach(entity);
 
-        // Remove highligt and bg fade effect
-        this.highlight.removeFromParent();
-        new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0}, 600).start();
+        // Remove focused entity
+        this.focused.clone.clear(); // Remove children (highlight)
+        this.focused.clone.removeFromParent(); // Remove from focus orbit
+        this.focused = null;
+        
+        // Reset focus orbit for next _bringToFront() call so 
+        // that it always starts at the same position
+        this.focus_orbit.rotation.y = 0;
+
+        // Hide bg fade mask
+        //new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0}, 600).start();
         
         // Re-calc distance for new orbit
         const new_pos = new THREE.Vector3();
         new_pos.copy(entity.position).divideScalar(this.focus_dst_mult);
-        new_pos.multiplyScalar(this.trans_dst_mult);
+        new_pos.multiplyScalar(this.trans_dst_mult*-1);
         
-        // Animate transition and set rotation to be parallel
-        new TWEEN.Tween(entity.position).to(new_pos, time).start();
-        entity.rotation.y = -this.transport_orbit.rotation.y;
-
-        // Reset focus orbit for next _bringToFront() call so 
-        // that it always starts at the same position
-        this.focus_orbit.rotation.y = 0;
+        new TWEEN.Tween(entity.position.multiplyScalar(-1)).to(new_pos, time).start();
+        //entity.rotation.y = -this.transport_orbit.rotation.y;
     }
 
     /**
@@ -521,9 +554,9 @@ function main() {
         const Y_material = new THREE.MeshBasicMaterial({ color: 0x08ff00 });
         const Z_material = new THREE.MeshBasicMaterial({ color: 0x0400ff });
         
-        // scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
-        // scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
-        // scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
+        scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
+        scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
+        scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
     }
     
     // Orbit and cards setup
@@ -604,7 +637,7 @@ function main() {
     const pick_pos = {x: 0, y: 0};
 
     const f_bound = handleClick.bind(orbit);
-    window.addEventListener('click', f_bound);
+    //window.addEventListener('click', f_bound);
 
     // Vertical nav menu setup using Swiper.js
     const swiper = setupMenu();
@@ -647,7 +680,8 @@ function main() {
     
         // Update focused Three.js item to match active slide
         swiper.on('slideChangeTransitionEnd', (event) => {
-            orbit.setFocus(Number(event.clickedSlide.dataset.id));
+            const active_slide = event.slides[event.activeIndex];
+            orbit.setFocus(Math.floor(Number(active_slide.dataset.id)));
         });
 
         return swiper;
@@ -665,7 +699,6 @@ function main() {
         media_objs.forEach(media_obj => {
             const material = new THREE.MeshPhongMaterial({
                 map: loader.load(media_obj.path),
-                side: THREE.DoubleSide
             });
 
             // Combat blurriness at distance
@@ -714,14 +747,14 @@ function main() {
     
     // Used for Three.js clicking
     function handleClick(event) {
-        if (this.clone === null) { return; }
+        if (this.focused === null) { return; }
 
         const pos = getCanvasRelativePosition(event);
         pick_pos.x = (pos.x / canvas.width ) *  2 - 1;
         pick_pos.y = (pos.y / canvas.height) * -2 + 1;  // note we flip Y
 
         const picked = pick_helper.pick(pick_pos, scene, camera);
-        if (picked.id === this.clone.id) {
+        if (picked.id === this.focused.clone.id) {
             enterDetailMode();
         }
     }
