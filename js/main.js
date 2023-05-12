@@ -72,7 +72,8 @@ class Orbit {
      * @param {*} center_obj - Object in center of orbit.
      * @param {number} focus_dist_mult - Multiplier for focus point distance
      */
-    constructor(radius, center_obj, focus_dist_mult = 1.3) {
+    constructor(camera, radius, center_obj, focus_dist_mult = 1.3) {
+        this.camera          = camera;
         this.radius          = radius;
         this.center_obj      = center_obj;
         this.focus_dst_mult  = focus_dist_mult;
@@ -171,6 +172,31 @@ class Orbit {
         });
     }
 
+    _scale(entity) {
+        const rescale = (entity) => {
+            const new_scale = new THREE.Vector3().copy(entity.scale).multiplyScalar(0.90);
+            
+            new TWEEN.Tween(entity).to({scale: new_scale}, 200).onComplete((entity => {
+                this._scale(entity);
+            })).start();
+        };
+        
+        const raycaster = new THREE.Raycaster();
+        const positions = [
+            new THREE.Vector2(0.7, 0.95),  // Height, top limit
+            new THREE.Vector2(0.7, -0.95), // Height, bottom limit
+            new THREE.Vector2(0, 0),       // Width, left limit
+            new THREE.Vector2(1, 0)        // Width, right limit
+        ];
+
+        for (let i = 0; i < positions.length; i++) {
+            raycaster.setFromCamera(positions[i], this.camera);
+            if (raycaster.intersectObject(entity, false).length) {
+                rescale(entity);
+            }
+        }
+    }
+
     /**
      * Set 'entity' as new focused entity and returns old focused entity to main orbit.
      * 
@@ -249,15 +275,18 @@ class Orbit {
         .to({opacity: 0.6}, 600); // Used to mask scene behind focused entity
         
         // Reposition entity to focus point
-        new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
-        new TWEEN.Tween(entity.rotation).to({y: -angle}, time).start(); // Counter-rotate entity
-        //new TWEEN.Tween(entity.rotation).to({y: -angle}, time).chain(fade_tween).start();
+        new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle + Math.PI/14}, time).start();
+        new TWEEN.Tween(entity.rotation).to({y: -angle - Math.PI/12}, time).chain(fade_tween).start(); // Counter-rotate entity
         new TWEEN.Tween(entity.position).to(new_pos, time/1.5).start();
+
+        // Scale down entity if too large
+        const f_scale_bound = this._scale.bind(this); // Bind to the class instance
+        setTimeout(f_scale_bound, time, entity);
 
         // Activate highlight effect after card has reached focused position,
         // delay by some time to facilitate delays in setTimeout
-        const f_bound = this.addHighlight.bind(this); // Bind to the class instance
-        setTimeout(f_bound, (time + 100), entity);
+        const f_highlight_bound = this.addHighlight.bind(this); // Bind to the class instance
+        setTimeout(f_highlight_bound, (time + 100), entity); 
     }
     
     /**
@@ -279,7 +308,7 @@ class Orbit {
         this.focus_orbit.rotation.y = 0;
 
         // Hide bg fade mask
-        //new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0}, 600).start();
+        new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0}, 600).start();
         
         // Get position for main orbit docking
         const new_pos = new THREE.Vector3();
@@ -470,12 +499,15 @@ function main() {
     sphere.receiveShadow = true;
     sphere.castShadow = true;
 
-    const orbit = new Orbit(6.5, sphere);
+    const orbit = new Orbit(camera, 6.5, sphere);
 
     const card_media_paths = [
         {path: 'media/Group 370.png', width: 1188, height: 1592},
         {path: 'media/Group 371.png', width: 852, height: 1760},
+        {path: 'media/Group 373.png', width: 852, height: 1760},
         {path: 'media/Group 439.png', width: 3432, height: 2232},
+        {path: 'media/Group 440.png', width: 852, height: 1760},
+        {path: 'media/Group 443.png', width: 852, height: 1760},
         {path: 'media/Group 444.png', width: 852, height: 1760}
     ];
     
@@ -610,7 +642,7 @@ function main() {
             const width = height * aspect;
             const geometry = new THREE.PlaneGeometry(width, height);
 
-            cards.push(new CardMesh(geometry, material, 0.05, 3.5, 0.0001));
+            cards.push(new CardMesh(geometry, material, 0.05, 2, 0.0001));
         });
 
         return cards;
@@ -679,6 +711,7 @@ function main() {
     function enterDetailMode() {
         info_block.style.opacity = 1;
         nav_menu.style.opacity = 0;
+        orbit.focused.clear();
         swiper.disable();
     }
     
@@ -686,6 +719,7 @@ function main() {
     function exitDetailMode() {
         info_block.style.opacity = 0;
         nav_menu.style.opacity = 1;
+        orbit.addHighlight(orbit.focused); // Re-add highlight
         swiper.enable();
     }
 
