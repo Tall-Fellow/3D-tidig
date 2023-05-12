@@ -68,27 +68,21 @@ class Orbit {
     /**
      * Create a orbit.
      * 
-     * @param {*} center_obj - Object in center of orbit.
      * @param {*} radius - Radius from system center at which entities will orbit.
+     * @param {*} center_obj - Object in center of orbit.
      * @param {number} focus_dist_mult - Multiplier for focus point distance
-     * @param {number} trans_dist_mult - Multiplier for transport orbit distance
      */
-    constructor(radius, center_obj, focus_dist_mult = 1.3, trans_dist_mult = 1.2) {
+    constructor(radius, center_obj, focus_dist_mult = 1.3) {
         this.radius          = radius;
         this.center_obj      = center_obj;
         this.focus_dst_mult  = focus_dist_mult;
-        this.trans_dst_mult  = trans_dist_mult;
         this.focused         = null;
-        //this.highlight       = null;
-        this.hidden_ents     = [];
         this.system          = new THREE.Group();
         this.main_orbit      = new THREE.Group();
         this.focus_orbit     = new THREE.Group();
-        this.transport_orbit = new THREE.Group();
         this.system.add(center_obj);
         this.system.add(this.main_orbit);
         this.system.add(this.focus_orbit);
-        this.system.add(this.transport_orbit);
 
         // Add mask used to darken scene when in focus
         const material = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0 });
@@ -100,14 +94,9 @@ class Orbit {
         // Debug
         this.dup_main_orbit = new THREE.Group();
         this.system.add(this.dup_main_orbit);
-        this.dup_transport_orbit = new THREE.Group();
-        this.system.add(this.dup_transport_orbit);
         const fgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
         const fmaterial = new THREE.MeshBasicMaterial({ color: 0x66327f });
         this.focus_orbit.add(new THREE.Mesh(fgeometry, fmaterial));
-        const tgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
-        const tmaterial = new THREE.MeshBasicMaterial({ color: 0xb9be38 });
-        this.dup_transport_orbit.add(new THREE.Mesh(tgeometry, tmaterial));
         const mgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
         const mmaterial = new THREE.MeshBasicMaterial({ color: 0x38bebd });
         this.dup_main_orbit.add(new THREE.Mesh(mgeometry, mmaterial));
@@ -156,7 +145,6 @@ class Orbit {
         // Set position for new element and add a new property
         entity.position.z = this.radius * Math.cos(angle);
         entity.position.x = this.radius * Math.sin(angle);
-        entity.freeze_rotation = false;
 
         this.main_orbit.add(entity);
     }
@@ -170,8 +158,6 @@ class Orbit {
     update(rotation) {
         this.main_orbit.rotation.y = rotation;
         this.dup_main_orbit.rotation.y = rotation;
-        this.transport_orbit.rotation.y = rotation*3;
-        this.dup_transport_orbit.rotation.y = rotation*3;
 
         this.main_orbit.children.forEach(child => {
             try {
@@ -181,42 +167,26 @@ class Orbit {
             catch (error) {
             }
 
-            if (!child.freeze_rotation) {
-                child.rotation.y = -rotation;
-            }
-
-            // When a child is transferring from transport to main orbit
-            // else {
-            //     child.rotation.y = -rotation*4;
-            //     if (this._isDockRotDone(child)) {
-            //         child.freeze_rotation = false;
-            //     }
-            // }
-        });
-
-        // Check if transport orbit entities are close enough to dock with main orbit
-        this.transport_orbit.children.forEach(child => {
-            child.rotation.y = -rotation*3;
-            //this._tryDock(child);
+            child.rotation.y = -rotation;
         });
     }
 
     /**
-     * Set 'entity' as new focused entity and returns old focused entity to its position.
+     * Set 'entity' as new focused entity and returns old focused entity to main orbit.
      * 
      * @param {Number} id - The new entity to focus, if 'null' nothing will be focused but 
-     * the old focused object will be returned to its position.
+     * the old focused object will be returned to orbit.
      */
     setFocus(id) {
         try {
-            if (id === this.focused.original.id) {
+            if (id === this.focused.id) {
                 // Item already focused, abort
                 return;
             }
 
             else {
                 // Another item is already focused, un-focus it and then proceed
-                this._focusedToTransport();
+                this._focusedToOrbit();
             }
         }
         
@@ -242,11 +212,6 @@ class Orbit {
     addHighlight(entity) {
         const highlight_material = new THREE.MeshBasicMaterial({ color: 0xFF9B2A, side: THREE.DoubleSide});
         const highlight_mesh = new THREE.Mesh(entity.geometry, highlight_material);
-        //this.highlight = highlight_mesh;
-        // highlight_mesh.position.copy(entity.position);
-        // highlight_mesh.rotation.copy(entity.rotation);
-        // highlight_mesh.rotateY(Math.PI);
-        // this.focus_orbit.add(highlight_mesh);
         entity.add(highlight_mesh);
         highlight_mesh.translateZ(-0.001);
 
@@ -259,24 +224,20 @@ class Orbit {
     }
 
     /**
-     * Takes an entity from the main orbit and clones it, the clone is then brought to the focus point.
+     * Takes an entity from the main orbit and brings it to the focus point.
      * 
      * @param {THREE.Object3D} entity - Entity to focus.
      * @param {number} time - Animation time in milliseconds.
      */
     _bringToFront(entity, time = 3000) {
-        // Clone entity & hide original
-        this.focused = { clone: entity.clone(false), original: entity};
-        entity.visible = false;
-        this.hidden_ents.push(entity);
+        this.focused = entity;
 
-        // Change orbit for cloned entity
-        this.main_orbit.add(this.focused.clone); // To get right position & rotation data
-        this.focus_orbit.attach(this.focused.clone); // Drops old parent (main orbit)
+        // Change orbit
+        this.focus_orbit.attach(entity); // Drops old parent (main orbit)
 
         // Calc new position in focus orbit
         const new_pos = new THREE.Vector3();
-        new_pos.copy(this.focused.clone.position).multiplyScalar(this.focus_dst_mult);
+        new_pos.copy(this.focused.position).multiplyScalar(this.focus_dst_mult);
         
         // Find the shortest travel direction and by how much to rotate
         // focus orbit from angle 0 to the focus point
@@ -288,29 +249,28 @@ class Orbit {
         
         // Reposition entity to focus point
         new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle}, time).start();
-        new TWEEN.Tween(this.focused.clone.rotation).to({y: -angle}, time).start(); // Counter-rotate entity
-        //new TWEEN.Tween(this.focused.clone.rotation).to({y: -angle}, time).chain(fade_tween).start();
-        new TWEEN.Tween(this.focused.clone.position).to(new_pos, time/1.5).start();
+        new TWEEN.Tween(entity.rotation).to({y: -angle}, time).start(); // Counter-rotate entity
+        //new TWEEN.Tween(entity.rotation).to({y: -angle}, time).chain(fade_tween).start();
+        new TWEEN.Tween(entity.position).to(new_pos, time/1.5).start();
 
         // Activate highlight effect after card has reached focused position,
         // delay by some time to facilitate delays in setTimeout
         const f_bound = this.addHighlight.bind(this); // Bind to the class instance
-        setTimeout(f_bound, (time + 100), this.focused.clone);
+        setTimeout(f_bound, (time + 100), entity);
     }
     
     /**
-     * Brings the focused entity from the focus point to the transport orbit.
+     * Brings the focused entity from the focus point to the main orbit.
      * 
      * @param {number} time - Animation time in milliseconds. 
      */
-    _focusedToTransport(time = 2000) {
-        // Clone focused entity without its children (so no highlight)
-        const entity = this.focused.clone.clone(false);
-        this.transport_orbit.attach(entity);
-
-        // Remove focused entity
-        this.focused.clone.clear(); // Remove children (highlight)
-        this.focused.clone.removeFromParent(); // Remove from focus orbit
+    _focusedToOrbit(time = 2000) {
+        const entity = this.focused;
+        entity.clear(); // Remove children (highlight)
+        
+        // Remove entity from focus orbit and temporarily change orbit to 
+        // non-rotating system orbit for the transition
+        this.system.attach(entity);
         this.focused = null;
         
         // Reset focus orbit for next _bringToFront() call so 
@@ -320,81 +280,18 @@ class Orbit {
         // Hide bg fade mask
         //new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0}, 600).start();
         
-        // Re-calc distance for new orbit
+        // Get position for main orbit docking
         const new_pos = new THREE.Vector3();
-        new_pos.copy(entity.position).divideScalar(this.focus_dst_mult);
-        new_pos.multiplyScalar(this.trans_dst_mult*-1);
-        
-        new TWEEN.Tween(entity.position.multiplyScalar(-1)).to(new_pos, time).start();
-        //entity.rotation.y = -this.transport_orbit.rotation.y;
-    }
+        const x = this.radius * Math.cos(Math.PI/4);
+        const z = this.radius * Math.sin(Math.PI/4);
+        new_pos.set(x, 0, z);
 
-    /**
-     * Tries to dock an entity from transport orbit into a free slot on the main orbit.
-     * 
-     * @param {THREE.Object3D} obj - Entity to try and dock.
-     * @param {number} docking_range - Distance threshold used to determine when to start the docking process.
-     * @param {number} time - Animation time in milliseconds.
-     */
-    _tryDock(obj, docking_range = 6, time = 3000) {
-        const actual_pos = new THREE.Vector3();
-        obj.getWorldPosition(actual_pos);
-
-        this.hidden_ents.forEach((hidden_obj, i) => {
-            // Convert to world positions
-            const target_pos = new THREE.Vector3();
-            hidden_obj.getWorldPosition(target_pos);
-            target_pos.multiplyScalar(this.trans_dst_mult); // Because entity is in main orbit
-
-            // If inside docking range
-            if (actual_pos.distanceToSquared(target_pos) <= docking_range) {
-                obj.freeze_rotation = true;
-                this.main_orbit.attach(obj);
-
-                const system_rotation = new THREE.Quaternion();
-                this.system.getWorldQuaternion(system_rotation);
-        
-                const obj_rotation = new THREE.Quaternion();
-                obj.getWorldQuaternion(obj_rotation);
-                const angle = obj_rotation.angleTo(system_rotation);
-
-                obj.rotation.y = angle;
-
-                new TWEEN.Tween(obj.position)
-                .to({x: hidden_obj.position.x, z: hidden_obj.position.z}, time)
-                .start();
-
-                const ctx = {obj, hidden_obj};
-                const onFinish = function() {
-                    this.obj.removeFromParent();
-                    this.hidden_obj.visible = true;
-                }.bind(ctx);
-
-                setTimeout(onFinish, time);
-
-                this.hidden_ents.splice(i, 1);
-            }
-        });
-    }
-
-    /**
-     * Checks if entity is sufficiently rotated.
-     * 
-     * @param {THREE.Object3D} obj - Entity to check.
-     * @param {number} tolerance - The angle threshold in radians between the actual and targeted position, function will start returning 'true'
-     * after it has been reached. Defaults to 1 degree.
-     * 
-     * @returns 'true' if angle is within threshold.
-     */
-    _isDockRotDone(obj, tolerance = 0.0175) {
-        const system_rotation = new THREE.Quaternion();
-        this.system.getWorldQuaternion(system_rotation);
-
-        const obj_rotation = new THREE.Quaternion();
-        obj.getWorldQuaternion(obj_rotation);
-        const angle = obj_rotation.angleTo(system_rotation);
-
-        return (angle <= tolerance || angle >= Math.PI - tolerance) ? true : false;
+        // Move to new position and dock when in position
+        new TWEEN.Tween({pos: entity.position, entity: entity}).to({pos: new_pos}, time).onComplete((obj) => {
+            // Return to main orbit and use the same initial rotation
+            this.main_orbit.attach(obj.entity);
+            obj.entity.rotation.copy(this.main_orbit.rotation);
+        }).start();
     }
 }
 
