@@ -25,6 +25,19 @@ body {
     width: 10vw;
 }
 
+#splash {
+    position: absolute;
+    width: 40%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 2rem;
+    color: #e3e3e3;
+    text-shadow: 1px 1px 3px #000000;
+    transition: opacity 1000ms;
+}
+
 #menu {
     position: absolute;
     top: 0;
@@ -32,7 +45,7 @@ body {
     height: 100vh;
     padding-left: 3vw;
     background: linear-gradient(90deg, #192633, transparent);
-    transition: opacity 600ms;
+    transition: opacity 1000ms;
 }
 
 .swiper {

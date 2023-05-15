@@ -94,13 +94,13 @@ class Orbit {
 
         // Debug
         this.dup_main_orbit = new THREE.Group();
-        this.system.add(this.dup_main_orbit);
+        // this.system.add(this.dup_main_orbit);
         const fgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
         const fmaterial = new THREE.MeshBasicMaterial({ color: 0x66327f });
-        this.focus_orbit.add(new THREE.Mesh(fgeometry, fmaterial));
+        // this.focus_orbit.add(new THREE.Mesh(fgeometry, fmaterial));
         const mgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
         const mmaterial = new THREE.MeshBasicMaterial({ color: 0x38bebd });
-        this.dup_main_orbit.add(new THREE.Mesh(mgeometry, mmaterial));
+        // this.dup_main_orbit.add(new THREE.Mesh(mgeometry, mmaterial));
     }
 
     /**
@@ -158,7 +158,7 @@ class Orbit {
      */
     update(rotation) {
         this.main_orbit.rotation.y = rotation;
-        this.dup_main_orbit.rotation.y = rotation;
+        // this.dup_main_orbit.rotation.y = rotation;
 
         this.main_orbit.children.forEach(child => {
             try {
@@ -414,6 +414,9 @@ function main() {
     const info_block = document.querySelector('.info_block');
     const nav_menu = document.querySelector('#menu');
 
+    // For splash screen
+    document.querySelector('#threejs_sec').addEventListener('click', enterExplorationMode, { once: true });
+
     // Exit detail mode transition setup
     document.querySelector('.info_block_return').addEventListener('click', exitDetailMode);    
     
@@ -428,12 +431,13 @@ function main() {
     const near   = 0.1;
     const far    = 100;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.z = 10.5;
+    // camera.position.z = 10.5;
+    camera.position.set(-5, 0, 15);
     camera.up.set(0, 1, 0); // Set camera up direction, needed for lookAt()
-    camera.lookAt(0, 0, 0); // Point camera towards origo
+    camera.lookAt(-10, 0, -10); // Point camera towards origo
 
     // Controls setup
-    const controls = new OrbitControls(camera, renderer.domElement);
+    // const controls = new OrbitControls(camera, renderer.domElement);
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -481,9 +485,9 @@ function main() {
         const Y_material = new THREE.MeshBasicMaterial({ color: 0x08ff00 });
         const Z_material = new THREE.MeshBasicMaterial({ color: 0x0400ff });
         
-        scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
-        scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
-        scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
+        // scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
+        // scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
+        // scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
     }
     
     // Orbit and cards setup
@@ -591,6 +595,7 @@ function main() {
 
         // Setup Swiper.js
         const swiper = new Swiper('.swiper', {
+            enabled: false,
             direction: 'vertical',
             loop: true,
             slidesPerView: Math.floor(card_ids.length/2), // Must be >= Menu items/2
@@ -707,6 +712,13 @@ function main() {
         //lightHelper2.update();
     }
 
+    function enterExplorationMode() {
+        const splash = document.querySelector('#splash');
+        splash.style.opacity = 0;
+        nav_menu.style.opacity = 1;
+        swiper.enable();
+    }
+
     // Used for menu transitions
     function enterDetailMode() {
         info_block.style.opacity = 1;
@@ -741,7 +753,7 @@ function main() {
         }
 
         orbit.update(time*0.1, true);
-        controls.update();
+        // controls.update();
         
         renderer.render(scene, camera);
     }
