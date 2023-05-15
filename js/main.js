@@ -505,18 +505,55 @@ function main() {
 
     const orbit = new Orbit(camera, 6.5, sphere);
 
-    const card_media_paths = [
-        {path: 'media/Group 370.png', width: 1188, height: 1592},
-        {path: 'media/Group 371.png', width: 852, height: 1760},
-        {path: 'media/Group 373.png', width: 852, height: 1760},
-        {path: 'media/Group 439.png', width: 3432, height: 2232},
-        {path: 'media/Group 440.png', width: 852, height: 1760},
-        {path: 'media/Group 443.png', width: 852, height: 1760},
-        {path: 'media/Group 444.png', width: 852, height: 1760}
+    const cards_data = [
+        {
+            path: 'media/Group 370.png', 
+            width: 1188, height: 1592,
+            title: 'Title 1',
+            content: '<p>Content 1</p>'
+        },
+        {
+            path: 'media/Group 371.png',
+            width: 852, height: 1760,
+            title: 'Title 2',
+            content: '<h2>Content 2</h2>'
+        },
+        {
+            path: 'media/Group 373.png',
+            width: 852, height: 1760,
+            title: '',
+            content: ''
+        },
+        {
+            path: 'media/Group 439.png',
+            width: 3432, height: 2232,
+            title: '',
+            content: ''
+        },
+        {
+            path: 'media/Group 440.png',
+            width: 852, height: 1760,
+            title: '',
+            content: ''
+        },
+        {
+            path: 'media/Group 443.png',
+            width: 852, height: 1760,
+            title: '',
+            content: ''
+        },
+        {
+            path: 'media/Group 444.png',
+            width: 852, height: 1760,
+            title: '',
+            content: ''
+        }
     ];
     
-    const cards = generateCards(card_media_paths);
-    cards.forEach(card => {
+    const cards = generateCards(cards_data);
+    cards.forEach((card, i) => {
+        cards_data[i].id = card.id; // Append generated card id to card data
+
         card.receiveShadow = true;
         card.castShadow = true;
         orbit.add(card, 0, true);
@@ -737,6 +774,15 @@ function main() {
 
     // Used for menu transitions
     function enterDetailMode() {
+        // Load data of current focused orbit object into info block
+        const data = cards_data.find(obj => obj.id === orbit.focused.id);
+        const title = document.querySelector('.info_block h1');
+        const body = document.querySelector('.info_block_content');
+
+        title.innerHTML = data.title;
+        body.innerHTML = data.content;
+
+        // Set visibilities
         info_block.style.opacity = 1;
         nav_menu.style.opacity = 0;
         orbit.focused.clear();

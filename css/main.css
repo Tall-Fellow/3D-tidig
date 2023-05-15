@@ -42,6 +42,14 @@ body {
     transition: opacity 1000ms;
 }
 
+#splash span {
+    font-weight: 100;
+}
+
+#splash span b {
+    font-weight: 600;
+}
+
 #menu {
     position: absolute;
     top: 0;
