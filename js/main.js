@@ -431,13 +431,13 @@ function main() {
     const near   = 0.1;
     const far    = 100;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    // camera.position.z = 10.5;
+    const camera_target = {x: -10, y: 0, z: -10};
     camera.position.set(-5, 0, 15);
     camera.up.set(0, 1, 0); // Set camera up direction, needed for lookAt()
-    camera.lookAt(-10, 0, -10); // Point camera towards origo
+    camera.lookAt(camera_target.x, camera_target.y, camera_target.z); // Point camera towards target
 
     // Controls setup
-    // const controls = new OrbitControls(camera, renderer.domElement);
+    //const controls = new OrbitControls(camera, renderer.domElement);
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -713,10 +713,26 @@ function main() {
     }
 
     function enterExplorationMode() {
+        document.querySelector('#threejs_sec').style.cursor = 'auto';
         const splash = document.querySelector('#splash');
+        // Set element visibilities
         splash.style.opacity = 0;
         nav_menu.style.opacity = 1;
         swiper.enable();
+
+        // Pan camera to right position
+        const time = 2000;
+        const new_pos = {x: 0, y: 0, z: 10.5}; // Final position of camera
+        // Smooth target transition
+        new TWEEN.Tween(camera_target).to({x: 0, y: 0, z: 0}, (time-30)).start();
+        // Smooth camera movement
+        new TWEEN.Tween(camera).to({position: new_pos}, time)
+        .onUpdate((camera) => {
+            camera.lookAt(camera_target.x, camera_target.y, camera_target.z);
+        })
+        .onComplete((camera) => {
+            camera.lookAt(camera_target.x, camera_target.y, camera_target.z);
+        }).start();
     }
 
     // Used for menu transitions
@@ -753,7 +769,7 @@ function main() {
         }
 
         orbit.update(time*0.1, true);
-        // controls.update();
+        //controls.update();
         
         renderer.render(scene, camera);
     }

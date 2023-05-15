@@ -7,6 +7,10 @@ body {
     background-color: #e3e3e3;
 }
 
+#threejs_sec {
+    cursor: pointer;
+}
+
 #main_canvas {
     display: block;
     width: 100%;
