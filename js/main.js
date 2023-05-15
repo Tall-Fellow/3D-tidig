@@ -626,7 +626,8 @@ function main() {
         const parent = document.querySelector('.swiper-wrapper');
         const card_ids = orbit.getIDs();
         card_ids.forEach(id => {
-            const html = `<div class="swiper-slide" data-id="${id}"><button type="button">Card id ${id}</button></div>`
+            const title = cards_data.find(obj => obj.id === id).title;
+            const html = `<div class="swiper-slide" data-id="${id}"><button type="button">${title}</button></div>`
             parent.insertAdjacentHTML('beforeend', html);
         });
 
