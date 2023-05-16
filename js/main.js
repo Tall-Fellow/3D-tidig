@@ -72,7 +72,7 @@ class Orbit {
      * @param {*} center_obj - Object in center of orbit.
      * @param {number} focus_dist_mult - Multiplier for focus point distance
      */
-    constructor(camera, radius, center_obj, focus_dist_mult = 1.3, animation_time = 2000) {
+    constructor(camera, radius, center_obj, focus_dist_mult = 1.3, animation_time = 1200) {
         this.camera          = camera;
         this.radius          = radius;
         this.center_obj      = center_obj;
@@ -181,7 +181,7 @@ class Orbit {
         const rescale = (entity) => {
             const new_scale = new THREE.Vector3().copy(entity.scale).multiplyScalar(0.90);
             
-            new TWEEN.Tween(entity).to({scale: new_scale}, 200).onComplete((entity => {
+            new TWEEN.Tween(entity).to({scale: new_scale}, 75).onComplete((entity => {
                 this._scale(entity);
             })).start();
         };
@@ -276,16 +276,19 @@ class Orbit {
         const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction;
 
         const fade_tween = new TWEEN.Tween(this.opacity_mask.material)
-        .to({opacity: 0.6}, 600); // Used to mask scene behind focused entity
+        .easing(TWEEN.Easing.Quadratic.In)
+        .to({opacity: 0.6}, 300); // Used to mask scene behind focused entity
         
         // Reposition entity to focus point (+ offset to set it to the side)
         new TWEEN.Tween(this.focus_orbit.rotation)
             .to({y: angle + Math.PI/14}, this.animation_time)
+            .easing(TWEEN.Easing.Circular.Out)
             .start();
 
         // Counter-rotate entity (with some offset to over-rotate it a bit)
         this.tween_ent_rot = new TWEEN.Tween(entity.rotation)
             .to({y: -angle - Math.PI/12}, this.animation_time)
+            .easing(TWEEN.Easing.Circular.Out)
             .chain(fade_tween).start();
 
         // Bring forward
@@ -315,7 +318,9 @@ class Orbit {
         this.focus_orbit.rotation.y = 0;
         
         // Hide bg fade mask
-        new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0}, 600).start();
+        new TWEEN.Tween(this.opacity_mask.material)
+            .easing(TWEEN.Easing.Quadratic.In)
+            .to({opacity: 0}, 300).start();
 
         // Get position for main orbit docking
         const new_pos = new THREE.Vector3();
@@ -700,6 +705,7 @@ function main() {
         media_objs.forEach(media_obj => {
             const material = new THREE.MeshPhongMaterial({
                 map: loader.load(media_obj.path),
+                side: THREE.DoubleSide
             });
 
             // Combat blurriness at distance
@@ -778,6 +784,7 @@ function main() {
         //lightHelper2.update();
     }
 
+    // Used to remove splash screen and reposition camera
     function enterExplorationMode() {
         document.querySelector('#threejs_sec').style.cursor = 'auto';
         const splash = document.querySelector('#splash');
@@ -790,15 +797,18 @@ function main() {
         const time = 2000;
         const new_pos = {x: 0, y: 0, z: 10.5}; // Final position of camera
         // Smooth target transition
-        new TWEEN.Tween(camera_target).to({x: 0, y: 0, z: 0}, (time-30)).start();
+        new TWEEN.Tween(camera_target).to({x: 0, y: 0, z: 0}, (time-30))
+            .easing(TWEEN.Easing.Cubic.Out)
+            .start();
         // Smooth camera movement
         new TWEEN.Tween(camera).to({position: new_pos}, time)
-        .onUpdate((camera) => {
-            camera.lookAt(camera_target.x, camera_target.y, camera_target.z);
-        })
-        .onComplete((camera) => {
-            camera.lookAt(camera_target.x, camera_target.y, camera_target.z);
-        }).start();
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onUpdate((camera) => {
+                camera.lookAt(camera_target.x, camera_target.y, camera_target.z);
+            })
+            .onComplete((camera) => {
+                camera.lookAt(camera_target.x, camera_target.y, camera_target.z);
+            }).start();
     }
 
     // Used for menu transitions
