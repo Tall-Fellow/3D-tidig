@@ -86,8 +86,8 @@ class Orbit {
         this.system.add(this.focus_orbit);
 
         // Tween animation holders
-        this.tween_ent_rot   = null;
-        this.tween_ent_pos   = null;
+        this.tween_ent_rot = null;
+        this.tween_ent_pos = null;
 
         // Add mask used to darken scene when in focus
         const material = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0 });
@@ -281,16 +281,11 @@ class Orbit {
         // Reposition entity to focus point
         new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle + Math.PI/14}, time).start();
         this.tween_ent_rot = new TWEEN.Tween(entity.rotation).to({y: -angle - Math.PI/12}, time).chain(fade_tween).start(); // Counter-rotate entity
-        this.tween_ent_pos = new TWEEN.Tween(entity.position).to(new_pos, time).start();
-
-        // Scale down entity if too large
-        const f_scale_bound = this._scale.bind(this); // Bind to the class instance
-        setTimeout(f_scale_bound, time, entity);
-
-        // Activate highlight effect after card has reached focused position,
-        // delay by some time to facilitate delays in setTimeout
-        const f_highlight_bound = this.addHighlight.bind(this); // Bind to the class instance
-        setTimeout(f_highlight_bound, (time + 100), entity); 
+        this.tween_ent_pos = new TWEEN.Tween(entity).to({position: new_pos}, time).onComplete(entity => {
+            // Re-scale entity to fit space and add highlight
+            this._scale(entity);
+            this.addHighlight(entity);
+        }).start();
     }
     
     /**
