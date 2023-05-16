@@ -85,6 +85,10 @@ class Orbit {
         this.system.add(this.main_orbit);
         this.system.add(this.focus_orbit);
 
+        // Tween animation holders
+        this.tween_ent_rot   = null;
+        this.tween_ent_pos   = null;
+
         // Add mask used to darken scene when in focus
         const material = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0 });
         material.transparent = true;
@@ -276,8 +280,8 @@ class Orbit {
         
         // Reposition entity to focus point
         new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle + Math.PI/14}, time).start();
-        new TWEEN.Tween(entity.rotation).to({y: -angle - Math.PI/12}, time).chain(fade_tween).start(); // Counter-rotate entity
-        new TWEEN.Tween(entity.position).to(new_pos, time/1.5).start();
+        this.tween_ent_rot = new TWEEN.Tween(entity.rotation).to({y: -angle - Math.PI/12}, time).chain(fade_tween).start(); // Counter-rotate entity
+        this.tween_ent_pos = new TWEEN.Tween(entity.position).to(new_pos, time).start();
 
         // Scale down entity if too large
         const f_scale_bound = this._scale.bind(this); // Bind to the class instance
@@ -306,16 +310,27 @@ class Orbit {
         // Reset focus orbit for next _bringToFront() call so 
         // that it always starts at the same position
         this.focus_orbit.rotation.y = 0;
-
+        
         // Hide bg fade mask
         new TWEEN.Tween(this.opacity_mask.material).to({opacity: 0}, 600).start();
-        
+
         // Get position for main orbit docking
         const new_pos = new THREE.Vector3();
-        const x = this.radius * Math.cos(Math.PI/4);
-        const z = this.radius * Math.sin(Math.PI/4);
-        new_pos.set(x, 0, z);
-
+        if (this.tween_ent_pos._isPlaying) {
+            // If focus change has occured mid animation, stop animation and 
+            // enter orbit at current position
+            this.tween_ent_rot.stop();
+            this.tween_ent_pos.stop();
+            new_pos.copy(entity.position).divideScalar(this.focus_dst_mult);
+        }
+        
+        else {
+            // Else enter orbit at fixed point 
+            const x = this.radius * Math.cos(Math.PI/4);
+            const z = this.radius * Math.sin(Math.PI/4);
+            new_pos.set(x, 0, z);
+        }
+        
         // Move to new position and dock when in position
         new TWEEN.Tween({pos: entity.position, entity: entity}).to({pos: new_pos}, time).onComplete((obj) => {
             // Return to main orbit and use the same initial rotation
