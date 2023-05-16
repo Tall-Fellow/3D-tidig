@@ -398,12 +398,12 @@ class PickHelper {
     }
 
     pick(normalized_position, scene, camera) {   
-      // cast a ray through the frustum
+      // Cast a ray through the frustum
       this.raycaster.setFromCamera(normalized_position, camera);
-      // get the list of objects the ray intersected
+      // Get the list of objects the ray intersected
       const intersectedObjects = this.raycaster.intersectObjects(scene.children);
       if (intersectedObjects.length) {
-        // pick the first object. It's the closest one
+        // Pick the first object. It's the closest one
         return intersectedObjects[0].object;
       }
     }
@@ -521,31 +521,31 @@ function main() {
         {
             path: 'media/Group 373.png',
             width: 852, height: 1760,
-            title: '',
+            title: 'Title 3',
             content: ''
         },
         {
             path: 'media/Group 439.png',
             width: 3432, height: 2232,
-            title: '',
+            title: 'Title 4',
             content: ''
         },
         {
             path: 'media/Group 440.png',
             width: 852, height: 1760,
-            title: '',
+            title: 'Title 5',
             content: ''
         },
         {
             path: 'media/Group 443.png',
             width: 852, height: 1760,
-            title: '',
-            content: ''
+            title: 'Direkt kommunikation',
+            content: 'Med information i mobilen är vägen kort mellan administratör och medarbetare'
         },
         {
             path: 'media/Group 444.png',
             width: 852, height: 1760,
-            title: '',
+            title: 'Title 7',
             content: ''
         }
     ];
