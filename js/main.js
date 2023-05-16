@@ -72,12 +72,13 @@ class Orbit {
      * @param {*} center_obj - Object in center of orbit.
      * @param {number} focus_dist_mult - Multiplier for focus point distance
      */
-    constructor(camera, radius, center_obj, focus_dist_mult = 1.3) {
+    constructor(camera, radius, center_obj, focus_dist_mult = 1.3, animation_time = 2000) {
         this.camera          = camera;
         this.radius          = radius;
         this.center_obj      = center_obj;
         this.focus_dst_mult  = focus_dist_mult;
         this.focused         = null;
+        this.animation_time  = animation_time;
         this.system          = new THREE.Group();
         this.main_orbit      = new THREE.Group();
         this.focus_orbit     = new THREE.Group();
@@ -257,9 +258,8 @@ class Orbit {
      * Takes an entity from the main orbit and brings it to the focus point.
      * 
      * @param {THREE.Object3D} entity - Entity to focus.
-     * @param {number} time - Animation time in milliseconds.
      */
-    _bringToFront(entity, time = 3000) {
+    _bringToFront(entity) {
         this.focused = entity;
 
         // Change orbit
@@ -278,11 +278,21 @@ class Orbit {
         const fade_tween = new TWEEN.Tween(this.opacity_mask.material)
         .to({opacity: 0.6}, 600); // Used to mask scene behind focused entity
         
-        // Reposition entity to focus point
-        new TWEEN.Tween(this.focus_orbit.rotation).to({y: angle + Math.PI/14}, time).start();
-        this.tween_ent_rot = new TWEEN.Tween(entity.rotation).to({y: -angle - Math.PI/12}, time).chain(fade_tween).start(); // Counter-rotate entity
-        this.tween_ent_pos = new TWEEN.Tween(entity).to({position: new_pos}, time).onComplete(entity => {
-            // Re-scale entity to fit space and add highlight
+        // Reposition entity to focus point (+ offset to set it to the side)
+        new TWEEN.Tween(this.focus_orbit.rotation)
+            .to({y: angle + Math.PI/14}, this.animation_time)
+            .start();
+
+        // Counter-rotate entity (with some offset to over-rotate it a bit)
+        this.tween_ent_rot = new TWEEN.Tween(entity.rotation)
+            .to({y: -angle - Math.PI/12}, this.animation_time)
+            .chain(fade_tween).start();
+
+        // Bring forward
+        this.tween_ent_pos = new TWEEN.Tween(entity)
+        .to({position: new_pos}, this.animation_time)
+        .onComplete(entity => {
+            // After all animations, re-scale entity to fit space and add highlight
             this._scale(entity);
             this.addHighlight(entity);
         }).start();
@@ -290,10 +300,8 @@ class Orbit {
     
     /**
      * Brings the focused entity from the focus point to the main orbit.
-     * 
-     * @param {number} time - Animation time in milliseconds. 
      */
-    _focusedToOrbit(time = 2000) {
+    _focusedToOrbit() {
         const entity = this.focused;
         entity.clear(); // Remove children (highlight)
 
@@ -327,11 +335,13 @@ class Orbit {
         }
         
         // Move to new position and dock when in position
-        new TWEEN.Tween({pos: entity.position, entity: entity}).to({pos: new_pos}, time).onComplete((obj) => {
-            // Return to main orbit and use the same initial rotation
-            this.main_orbit.attach(obj.entity);
-            obj.entity.rotation.copy(this.main_orbit.rotation);
-        }).start();
+        new TWEEN.Tween({pos: entity.position, entity: entity})
+            .to({pos: new_pos}, this.animation_time)
+            .onComplete(obj => {
+                // Return to main orbit and use the same initial rotation
+                this.main_orbit.attach(obj.entity);
+                obj.entity.rotation.copy(this.main_orbit.rotation);
+            }).start();
     }
 }
 
