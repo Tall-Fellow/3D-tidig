@@ -109,7 +109,7 @@ body {
 .info_block_content {
     padding-right: 2rem;
     max-height: 50vh;
-    overflow: scroll;
+    overflow: auto;
 }
 
 .info_block_return {
