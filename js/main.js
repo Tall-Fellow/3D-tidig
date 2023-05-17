@@ -156,23 +156,15 @@ class Orbit {
     }
 
     /**
-     * Updates positions, rotations and triggers eventual 'update()' functions 
-     * of orbit entities.
+     * Updates positions and rotations of orbit entities.
      * 
-     * @param {number} rotation - An angle in radians, set the rotation of the orbit entities.
+     * @param {number} rotation - An angle in radians, set the rotation of the orbits.
      */
     update(rotation) {
         this.main_orbit.rotation.y = rotation;
         // this.dup_main_orbit.rotation.y = rotation;
 
         this.main_orbit.children.forEach(child => {
-            try {
-                child.update();
-            }
-            
-            catch (error) {
-            }
-
             child.rotation.y = -rotation;
         });
     }
@@ -265,6 +257,10 @@ class Orbit {
         // Change orbit
         this.focus_orbit.attach(entity); // Drops old parent (main orbit)
 
+        // Cancel vertical movement of entity
+        entity.tween_init.stop();
+        entity.tween.stop();
+
         // Calc new position in focus orbit
         const new_pos = new THREE.Vector3();
         new_pos.copy(this.focused.position).multiplyScalar(this.focus_dst_mult);
@@ -330,6 +326,7 @@ class Orbit {
             this.tween_ent_rot.stop();
             this.tween_ent_pos.stop();
             new_pos.copy(entity.position).divideScalar(this.focus_dst_mult);
+            new_pos.setY(0);
         }
         
         else {
@@ -342,10 +339,12 @@ class Orbit {
         // Move to new position and dock when in position
         new TWEEN.Tween({pos: entity.position, entity: entity})
             .to({pos: new_pos}, this.animation_time)
+            .easing(TWEEN.Easing.Cubic.Out)
             .onComplete(obj => {
                 // Return to main orbit and use the same initial rotation
                 this.main_orbit.attach(obj.entity);
                 obj.entity.rotation.copy(this.main_orbit.rotation);
+                obj.entity.tween_init.start();
             }).start();
     }
 }
@@ -367,53 +366,27 @@ class CardMesh extends THREE.Mesh {
      * @param {number} allowed_deviation - Maximum allowed vertical drifting distance, set to 0 for none.
      * @param {number} acceleration - Acceleration on direction change and initial spawning.
      */
-    constructor(geometry, material, max_speed, allowed_deviation, acceleration) {
+    constructor(geometry, material, allowed_deviation) {
         super(geometry, material);
-        this.orgPosY           = this.position.y;
         this.allowed_deviation = allowed_deviation;
-        this.max_speed         = max_speed * Math.random();
-        this.speed             = 0;
-        this.acceleration      = acceleration;
-        this._changeDirection(0.5);
-    }
-
-    /**
-     * Switches vertical direction.
-     * 
-     * @param {number} chance - Percentage chance of changing direction. 
-     */
-    _changeDirection(chance = 0.005) {
-        const change = Math.random() < chance;
-        if (change) {
-            this.acceleration *= -1;
-        }
-    }
-
-    /**
-     * Updates vertical position, may trigger a direction switch as well.
-     */
-    update() {
-        // Stop if out-of-bounds       
-        if (Math.abs(this.position.y - this.orgPosY) > this.allowed_deviation) {
-            this.position.y -= this.speed;
-            this.speed = 0;
-        }
-        
-        else {
-            this.position.y += this.speed;
-        }
-
-        this._changeDirection();
-
-        // Stop if max speed has been reached
-        if (Math.abs(this.speed) > this.max_speed) {
-            const d = this.speed < 0 ? -1 : 1; // Keep direction of travel
-            this.speed = this.max_speed * d;
-        } 
-        
-        else {
-            this.speed += this.acceleration;
-        }
+        const max_time = 6000;
+        const min_time = 4000;
+        const time = Math.random() * (max_time - min_time) + min_time;
+        const direction = Math.random() < 0.5? 1 : -1;
+        this.bound = this.position.y + (Math.abs(allowed_deviation) * direction);
+        this.tween = new TWEEN.Tween(this.position)
+            .to({y: -this.bound}, time)
+            .easing(TWEEN.Easing.Back.InOut)
+            .repeat(Infinity)
+            .yoyo(true)
+            .onRepeat(() => {
+                this.bound *= -1;
+            });
+        this.tween_init = new TWEEN.Tween(this.position)
+            .to({y: this.bound}, time/2)
+            .easing(TWEEN.Easing.Back.Out)
+            .chain(this.tween)
+            .start();
     }
 }
 
@@ -719,7 +692,7 @@ function main() {
             const width = height * aspect;
             const geometry = new THREE.PlaneGeometry(width, height);
 
-            cards.push(new CardMesh(geometry, material, 0.05, 2, 0.0001));
+            cards.push(new CardMesh(geometry, material, 1.3));
         });
 
         return cards;
