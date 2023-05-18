@@ -409,7 +409,7 @@ class PickHelper {
 
 function main() {
     const canvas = document.querySelector('#main_canvas');
-    const info_block = document.querySelector('.info_block');
+    const info_block = document.querySelector('.info_block_wrapper');
     const nav_menu = document.querySelector('#menu');
 
     // For splash screen

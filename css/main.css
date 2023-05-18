@@ -96,14 +96,23 @@ body {
     visibility: hidden;
 }
 
-.info_block {
+.info_block_wrapper {
     position: absolute;
-    top: 10rem;
-    left: 2rem;
-    width: 45vw;
-    color: #e3e3e3;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: fit-content;
     opacity: 0;
+    background-color: #000000cf;
     transition: opacity 600ms;
+}
+
+.info_block {
+    position: relative;
+    top: 25vh;
+    padding-left: 2rem;
+    width: 32vw;
+    color: #e3e3e3;
 }
 
 .info_block_content {
