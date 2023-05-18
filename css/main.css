@@ -95,6 +95,18 @@ body {
     visibility: hidden;
 }
 
+#exit_cross {
+    position: absolute;
+    top: 2vw;
+    right: 2vw;
+    height: 45px;
+    width: 45px;
+    background-image: url('../media/cross.svg');
+    background-size: contain;
+    background-color: #FFFFFF40;
+    cursor: pointer;
+}
+
 .info_block_wrapper {
     position: absolute;
     top: 0;

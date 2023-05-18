@@ -412,12 +412,16 @@ function main() {
     const canvas = document.querySelector('#main_canvas');
     const info_block = document.querySelector('.info_block_wrapper');
     const nav_menu = document.querySelector('#menu');
+    const exit_cross = document.querySelector('#exit_cross');
 
     // For splash screen
     document.querySelector('#threejs_sec').addEventListener('click', enterExplorationMode, { once: true });
 
     // Exit detail mode transition setup
-    document.querySelector('.info_block_return').addEventListener('click', exitDetailMode);    
+    document.querySelector('.info_block_return').addEventListener('click', exitDetailMode);
+
+    // For exit focus mode
+    exit_cross.addEventListener('click', exitFocusMode);
     
     // Takes data and renders onto canvas
     const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
@@ -662,6 +666,10 @@ function main() {
         swiper.on('slideChangeTransitionEnd', (event) => {
             const active_slide = event.slides[event.activeIndex];
             orbit.setFocus(Math.floor(Number(active_slide.dataset.id)));
+
+            if (exit_cross.style.visibility === 'hidden') {
+                exit_cross.style.visibility = 'visible';
+            }
         });
 
         return swiper;
@@ -808,6 +816,11 @@ function main() {
         nav_menu.style.opacity = 1;
         orbit.addHighlight(orbit.focused); // Re-add highlight
         swiper.enable();
+    }
+
+    function exitFocusMode() {
+        orbit.setFocus(null);
+        exit_cross.style.visibility = 'hidden';
     }
 
     /**
