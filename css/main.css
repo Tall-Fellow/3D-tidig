@@ -56,7 +56,6 @@ body {
     left: 0;
     height: 100vh;
     padding-left: 3vw;
-    background: linear-gradient(90deg, #192633, transparent);
     transition: opacity 1000ms;
 }
 
@@ -65,7 +64,7 @@ body {
     top: 50%;
     transform: translateY(-50%);
     height: 50vh;
-    width: 15rem;
+    width: 20rem;
     -webkit-mask-image: linear-gradient(180deg, #000 5%, #00000085 50%, transparent 95%);
 }
 
@@ -81,7 +80,7 @@ body {
     background: none;
     border: none;
     padding: 0;
-    font-size: 120%;
+    font-size: 150%;
     font-weight: lighter;
     text-align: left;
     color: #e3e3e3;

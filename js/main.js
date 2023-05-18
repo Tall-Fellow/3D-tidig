@@ -271,9 +271,10 @@ class Orbit {
         const direction = new_pos.x < 0 ? 1 : -1;
         const angle = Math.abs(Math.atan2(new_pos.x, new_pos.z)) * direction;
 
+        // Used to mask scene behind focused entity
         const fade_tween = new TWEEN.Tween(this.opacity_mask.material)
         .easing(TWEEN.Easing.Quadratic.In)
-        .to({opacity: 0.6}, 300); // Used to mask scene behind focused entity
+        .to({opacity: 0.6}, 300);
         
         // Reposition entity to focus point (+ offset to set it to the side)
         new TWEEN.Tween(this.focus_orbit.rotation)
