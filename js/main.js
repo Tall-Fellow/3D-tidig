@@ -765,7 +765,7 @@ function main() {
         pick_pos.y = (pos.y / canvas.height) * -2 + 1;  // note we flip Y
 
         const picked = pick_helper.pick(pick_pos, scene, camera);
-        if (picked.id === this.focused.id) {
+        if (picked.id === this.focused.id || picked.parent.id === this.focused.id) {
             enterDetailMode();
         }
     }

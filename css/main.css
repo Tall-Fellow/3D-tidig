@@ -113,6 +113,7 @@ body {
     left: 0;
     height: 100vh;
     width: fit-content;
+    padding-right: 1rem;
     opacity: 0;
     background-color: #000000cf;
     transition: opacity 600ms;
