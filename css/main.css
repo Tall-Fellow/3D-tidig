@@ -2,9 +2,13 @@ html,
 body {
     margin: 0;
     height: 100%;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Work sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 16px;
     background-color: #e3e3e3;
+}
+
+button {
+    font-family: inherit;
 }
 
 #threejs_sec {

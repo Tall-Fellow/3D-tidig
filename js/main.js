@@ -393,8 +393,8 @@ class CardMesh extends THREE.Mesh {
     constructor(geometry, material, allowed_deviation) {
         super(geometry, material);
         this.allowed_deviation = allowed_deviation;
-        const max_time = 6000;
-        const min_time = 4000;
+        const max_time = 10000;
+        const min_time = 5000;
         const time = Math.random() * (max_time - min_time) + min_time;
         const direction = Math.random() < 0.5? 1 : -1;
         this.bound = this.position.y + (Math.abs(allowed_deviation) * direction);
