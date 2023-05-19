@@ -233,9 +233,32 @@ class Orbit {
      * @see https://github.com/stemkoski/stemkoski.github.com/blob/master/Three.js/Outline.html
      */
     addHighlight(entity) {
-        const highlight_material = new THREE.MeshBasicMaterial({ color: 0xFF9B2A, side: THREE.FrontSide});
+        const loader = new THREE.TextureLoader();
+        const btn_material = new THREE.MeshBasicMaterial({
+            map: loader.load('media/read_more.png'),
+            side: THREE.FrontSide,
+        });
+
+        // Combat blurriness at distance
+        btn_material.map.magFilter = THREE.LinearFilter;
+        btn_material.map.minFilter = THREE.LinearMipmapLinearFilter;
+
+        const btn_w = 0.85;
+        const btn_geometry = new THREE.PlaneGeometry(btn_w, btn_w * 0.29); // Aspect ratio hard-coded
+        const btn_mesh = new THREE.Mesh(btn_geometry, btn_material);
+        entity.add(btn_mesh);
+        
+        const btn_offset = -(entity.geometry.parameters.height/2 - btn_geometry.parameters.height - 0.1)
+        btn_mesh.position.setY(btn_offset);
+        btn_mesh.translateZ(0.001);
+
+        const highlight_material = new THREE.MeshBasicMaterial({
+            color: 0xFF9B2A,
+            side: THREE.FrontSide
+        });
         const highlight_mesh = new THREE.Mesh(entity.geometry, highlight_material);
         entity.add(highlight_mesh);
+        
         highlight_mesh.translateZ(-0.001);
 
         const max_scale = highlight_mesh.scale.clone().multiplyScalar(1.015); // Upper bound of highligt effect
@@ -687,7 +710,6 @@ function main() {
         media_objs.forEach(media_obj => {
             const material = new THREE.MeshPhongMaterial({
                 map: loader.load(media_obj.path),
-                side: THREE.DoubleSide
             });
 
             // Combat blurriness at distance
