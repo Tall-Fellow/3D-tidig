@@ -243,8 +243,8 @@ class Orbit {
         btn_material.map.magFilter = THREE.LinearFilter;
         btn_material.map.minFilter = THREE.LinearMipmapLinearFilter;
 
-        const btn_w = 0.85;
-        const btn_geometry = new THREE.PlaneGeometry(btn_w, btn_w * 0.29); // Aspect ratio hard-coded
+        const btn_w = 0.90;
+        const btn_geometry = new THREE.PlaneGeometry(btn_w, btn_w * 0.3026); // Aspect ratio hard-coded
         const btn_mesh = new THREE.Mesh(btn_geometry, btn_material);
         entity.add(btn_mesh);
         
@@ -533,54 +533,124 @@ function main() {
 
     const cards_data = [
         {
+            path: 'media/Group 121.png', 
+            width: 558, height: 600,
+            title: 'Title 0',
+            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.`
+        },
+        {
             path: 'media/Group 370.png', 
-            width: 1188, height: 1592,
+            width: 441, height: 600,
             title: 'Title 1',
-            content:
-                `111111111111111 1111111111111111111111111111111 11111111111111 11111111111111111111111111
-                111 1111111111111111111111111 11111111111111111111 11111111111111111 111111111111 11111111
-                1111111111111 1111111 11111 11111111111111111111 111111111111111111111 1111111111111111 11
-                111111111 111111111111 111111111111111 1111111111 1111111111111 111111111111 11111111 1111
-                1111111111111111 1111111 111 111111111111111 111111111111111 111111111111111 11111111111 1
-                1111111111 1111 111111111111111 11111111111111111 11111111111111111 111111111111111 111111
-                1111 111111111111111111 11111111 1 111111111111111111111 11111111111111 111111111111111 11
-                111111111111111 1111111111111111 11111111111111111111111111 111111 111111111111 111111111`
+            content: `<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.</p>
+                
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.</p>`
         },
         {
             path: 'media/Group 371.png',
-            width: 852, height: 1760,
+            width: 277, height: 600,
             title: 'Title 2',
-            content: '<h2>Content 2</h2>'
+            content: `<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.</p>
+                
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.</p>`
         },
         {
             path: 'media/Group 373.png',
-            width: 852, height: 1760,
+            width: 277, height: 600,
             title: 'Title 3',
-            content: ''
+            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.`
         },
         {
             path: 'media/Group 439.png',
-            width: 3432, height: 2232,
+            width: 933, height: 600,
             title: 'Title 4',
-            content: ''
+            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.`
         },
         {
             path: 'media/Group 440.png',
-            width: 852, height: 1760,
+            width: 277, height: 600,
             title: 'Title 5',
-            content: ''
+            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.`
         },
         {
             path: 'media/Group 443.png',
-            width: 852, height: 1760,
+            width: 278, height: 600,
             title: 'Direkt kommunikation',
-            content: 'Med information i mobilen är vägen kort mellan administratör och medarbetare'
+            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.`
         },
         {
             path: 'media/Group 444.png',
-            width: 852, height: 1760,
+            width: 277, height: 600,
             title: 'Title 7',
-            content: ''
+            content: `<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.</p>
+                
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
+                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
+                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
+                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
+                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
+                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
+                Sit amet volutpat consequat mauris nunc congue nisi.</p>`
         }
     ];
     
