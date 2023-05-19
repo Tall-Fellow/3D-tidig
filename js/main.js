@@ -172,7 +172,7 @@ class Orbit {
     _scale(entity) {
         const rescale = (entity) => {
             const new_scale = new THREE.Vector3().copy(entity.scale).multiplyScalar(0.90);
-            
+
             new TWEEN.Tween(entity).to({scale: new_scale}, 75).onComplete((entity => {
                 this._scale(entity);
             })).start();
@@ -235,8 +235,9 @@ class Orbit {
     addHighlight(entity) {
         const loader = new THREE.TextureLoader();
         const btn_material = new THREE.MeshBasicMaterial({
-            map: loader.load('media/read_more.png'),
+            map: loader.load('media/read_more5.png'),
             side: THREE.FrontSide,
+            transparent: true,
         });
 
         // Combat blurriness at distance
@@ -244,13 +245,13 @@ class Orbit {
         btn_material.map.minFilter = THREE.LinearMipmapLinearFilter;
 
         const btn_w = 0.90;
-        const btn_geometry = new THREE.PlaneGeometry(btn_w, btn_w * 0.3026); // Aspect ratio hard-coded
+        const btn_geometry = new THREE.PlaneGeometry(btn_w, btn_w * 1.0); // Aspect ratio hard-coded
         const btn_mesh = new THREE.Mesh(btn_geometry, btn_material);
         entity.add(btn_mesh);
         
-        const btn_offset = -(entity.geometry.parameters.height/2 - btn_geometry.parameters.height - 0.1)
-        btn_mesh.position.setY(btn_offset);
-        btn_mesh.translateZ(0.001);
+        const btn_x_offset = -1.1 * (entity.geometry.parameters.width/2 + btn_w/2);
+        const btn_y_offset = -(entity.geometry.parameters.height/2 - btn_geometry.parameters.height - 0.1);
+        btn_mesh.position.set(btn_x_offset, btn_y_offset, 0.1);
 
         const highlight_material = new THREE.MeshBasicMaterial({
             color: 0xFF9B2A,
@@ -316,8 +317,8 @@ class Orbit {
         .to({position: new_pos}, this.animation_time)
         .onComplete(entity => {
             // After all animations, re-scale entity to fit space and add highlight
-            this._scale(entity);
             this.addHighlight(entity);
+            this._scale(entity);
         }).start();
     }
     
