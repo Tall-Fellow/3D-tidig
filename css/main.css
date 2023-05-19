@@ -56,6 +56,7 @@ body {
     left: 0;
     height: 100vh;
     padding-left: 3vw;
+    background: linear-gradient(90deg, #192633, transparent);
     transition: opacity 1000ms;
 }
 
