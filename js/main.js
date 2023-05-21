@@ -62,24 +62,26 @@ class MinMaxGUIHelper {
 // End GUI stuff
 
 /**
- * Class representing a perfectly circular orbit with a single stationary central object.
+ * Class representing a perfectly circular orbit around a single stationary central object.
  */
 class Orbit {
     /**
      * Create a orbit.
      * 
-     * @param {*} radius - Radius from system center at which entities will orbit.
-     * @param {*} center_obj - Object in center of orbit.
-     * @param {number} focus_dist_mult - Multiplier for focus point distance
+     * @param {THREE.Camera} camera - The camera used to view the orbit, is for checking if entities are within bounds.
+     * @param {number} radius - Radius from system center at which entities will orbit.
+     * @param {THREE.Object3D} center_obj - Object in center of orbit.
+     * @param {number} focus_dist_mult - Multiplier for focus point distance.
+     * @param {number} animation_time - Time in milliseconds, used as a base for animation times.
      */
     constructor(camera, radius, center_obj, focus_dist_mult = 1.3, animation_time = 1200) {
         this.camera          = camera;
         this.radius          = radius;
         this.center_obj      = center_obj;
         this.focus_dst_mult  = focus_dist_mult;
-        this.focused         = null;
+        this.focused         = null; // Holds the focused entity
         this.animation_time  = animation_time;
-        this.system          = new THREE.Group();
+        this.system          = new THREE.Group(); // The system that holds all the orbits and the center object
         this.main_orbit      = new THREE.Group();
         this.focus_orbit     = new THREE.Group();
         this.system.add(center_obj);
@@ -90,14 +92,14 @@ class Orbit {
         this.tween_ent_rot = null;
         this.tween_ent_pos = null;
 
-        // Add mask used to darken scene when in focus
+        // Add mask used to darken scene when an entity is in focus
         const material = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0 });
         material.transparent = true;
         this.opacity_mask = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), material);
         this.opacity_mask.position.set(0, 0, radius * (focus_dist_mult - 0.1)); // Place right behind focus point
         this.system.add(this.opacity_mask);
 
-        // Debug
+        // Debug stuff
         this.dup_main_orbit = new THREE.Group();
         // this.system.add(this.dup_main_orbit);
         const fgeometry = new THREE.BoxGeometry(0.3, 0.3, 10);
@@ -116,9 +118,9 @@ class Orbit {
     }
 
     /**
-     * Get all orbit entities id's.
+     * Get all main orbit entities id's.
      * 
-     * @returns Array of ids for every entity in orbit.
+     * @returns Array of ids for every entity in main orbit (not focused!).
      */
     getIDs() {
         const ids = [];
@@ -132,7 +134,7 @@ class Orbit {
     /**
      * Adds a new item to the orbit.
      * 
-     * @param {*} entity - The entity which will be added to the orbit. 
+     * @param {THREE.Object3D} entity - The entity which will be added to the orbit. 
      * @param {number} angle - The angle in radians where the entity will be placed.
      * @param {boolean} redistribute_all - Set to 'true' to uniformly redistribute all existing items in the orbit.
      */
@@ -156,9 +158,9 @@ class Orbit {
     }
 
     /**
-     * Updates positions and rotations of orbit entities.
+     * Updates positions and rotations of main orbit and its entities.
      * 
-     * @param {number} rotation - An angle in radians, set the rotation of the orbits.
+     * @param {number} rotation - An angle in radians, sets the rotation of the main orbit.
      */
     update(rotation) {
         this.main_orbit.rotation.y = rotation;
@@ -169,9 +171,14 @@ class Orbit {
         });
     }
 
+    /**
+     * Scales down an entity to fit inside the right half of the screen if needed.
+     * 
+     * @param {THREE.Object3D} entity - Entity to scale.
+     */
     _scale(entity) {
         const rescale = (entity) => {
-            const new_scale = new THREE.Vector3().copy(entity.scale).multiplyScalar(0.90);
+            const new_scale = new THREE.Vector3().copy(entity.scale).multiplyScalar(0.90); // Scale down in 10% increments
 
             new TWEEN.Tween(entity).to({scale: new_scale}, 75).onComplete((entity => {
                 this._scale(entity);
@@ -179,11 +186,12 @@ class Orbit {
         };
         
         const raycaster = new THREE.Raycaster();
+        // Positions to check if clear
         const positions = [
-            new THREE.Vector2(0.7, 0.95),  // Height, top limit
-            new THREE.Vector2(0.7, -0.95), // Height, bottom limit
-            new THREE.Vector2(0, 0),       // Width, left limit
-            new THREE.Vector2(1, 0)        // Width, right limit
+            new THREE.Vector2(0.7, 0.95),  // Height, top limit (top of screen)
+            new THREE.Vector2(0.7, -0.95), // Height, bottom limit (bottom of screen)
+            new THREE.Vector2(0, 0),       // Width, left limit (center of screen)
+            new THREE.Vector2(1, 0)        // Width, right limit (right of screen)
         ];
 
         for (let i = 0; i < positions.length; i++) {
@@ -195,7 +203,7 @@ class Orbit {
     }
 
     /**
-     * Set 'entity' as new focused entity and returns old focused entity to main orbit.
+     * Set an entity as the new focused entity and returns eventual old focused entity to main orbit.
      * 
      * @param {Number} id - The new entity to focus, if 'null' nothing will be focused but 
      * the old focused object will be returned to orbit.
@@ -225,7 +233,7 @@ class Orbit {
     }
 
     /**
-     * Adds highlight effect to an entity.
+     * Adds highlight border effect to an entity and a read more button.
      * 
      * @param {THREE.Object3D} entity - Entity to highlight.
      * 
@@ -233,6 +241,7 @@ class Orbit {
      * @see https://github.com/stemkoski/stemkoski.github.com/blob/master/Three.js/Outline.html
      */
     addHighlight(entity) {
+        // Setup read more button
         const loader = new THREE.TextureLoader();
         const btn_material = new THREE.MeshBasicMaterial({
             map: loader.load('media/read_more5.png'),
@@ -244,15 +253,18 @@ class Orbit {
         btn_material.map.magFilter = THREE.LinearFilter;
         btn_material.map.minFilter = THREE.LinearMipmapLinearFilter;
 
-        const btn_w = 0.90;
-        const btn_geometry = new THREE.PlaneGeometry(btn_w, btn_w * 1.0); // Aspect ratio hard-coded
+        // Button dimensions
+        const btn_width = 0.90;
+        const btn_geometry = new THREE.PlaneGeometry(btn_width, btn_width * 1.0); // Aspect ratio hard-coded (texture height/width)
         const btn_mesh = new THREE.Mesh(btn_geometry, btn_material);
         entity.add(btn_mesh);
         
-        const btn_x_offset = -1.1 * (entity.geometry.parameters.width/2 + btn_w/2);
+        // Button position
+        const btn_x_offset = -1.1 * (entity.geometry.parameters.width/2 + btn_width/2);
         const btn_y_offset = -(entity.geometry.parameters.height/2 - btn_geometry.parameters.height - 0.1);
         btn_mesh.position.set(btn_x_offset, btn_y_offset, 0.1);
 
+        // Setup highlight border
         const highlight_material = new THREE.MeshBasicMaterial({
             color: 0xFF9B2A,
             side: THREE.FrontSide
@@ -262,7 +274,7 @@ class Orbit {
         
         highlight_mesh.translateZ(-0.001);
 
-        const max_scale = highlight_mesh.scale.clone().multiplyScalar(1.015); // Upper bound of highligt effect
+        const max_scale = highlight_mesh.scale.clone().multiplyScalar(1.015); // Upper bound of highlight effect
         new TWEEN.Tween(highlight_mesh.scale)
         .to(max_scale, 2000)
         .repeat(Infinity)
@@ -327,7 +339,7 @@ class Orbit {
      */
     _focusedToOrbit() {
         const entity = this.focused;
-        entity.clear(); // Remove children (highlight)
+        entity.clear(); // Remove children (highlight & read more btn)
 
         // Remove entity from focus orbit and temporarily change orbit to 
         // non-rotating system orbit for the transition
@@ -381,22 +393,20 @@ class Orbit {
  */
 class CardMesh extends THREE.Mesh {
     /**
-     * Creates a THREE.Mesh object with vertical travel support.
+     * Creates a THREE.Mesh plane object with vertical travel.
      * Initial vertical travel direction is randomized (50%) either way.
-     * Object will randomly change direction.
+     * Mesh will change direction after reaching end.
      * 
      * @param {*} geometry - A Three.js geometry for the mesh.
      * @param {*} material - A Three.js material for the mesh.
-     * @param {number} max_speed - Vertical travel max speed, actual speed is randomized.
      * @param {number} allowed_deviation - Maximum allowed vertical drifting distance, set to 0 for none.
-     * @param {number} acceleration - Acceleration on direction change and initial spawning.
      */
     constructor(geometry, material, allowed_deviation) {
         super(geometry, material);
         this.allowed_deviation = allowed_deviation;
-        const max_time = 10000;
-        const min_time = 5000;
-        const time = Math.random() * (max_time - min_time) + min_time;
+        const max_time = 10000; // Upper-bound of animation time
+        const min_time = 5000; // Lower-bound of animation time
+        const time = Math.random() * (max_time - min_time) + min_time; // Pick a time in-between upper and lower time bound
         const direction = Math.random() < 0.5? 1 : -1;
         this.bound = this.position.y + (Math.abs(allowed_deviation) * direction);
         this.tween = new TWEEN.Tween(this.position)
@@ -415,11 +425,21 @@ class CardMesh extends THREE.Mesh {
     }
 }
 
+/**
+ * Class used to click inside THREE.js.
+ */
 class PickHelper {
     constructor() {
       this.raycaster = new THREE.Raycaster();
     }
 
+    /**
+     * 
+     * @param {THREE.Vector2} normalized_position - 2D coordinates of the mouse, in normalized device coordinates (NDC), X and Y between -1 and 1.
+     * @param {THREE.Object3D} scene - The THREE.Scene/Object3D containing the relevant entities.
+     * @param {THREE.Camera} camera - Camera to raycast through.
+     * @returns The first/closest object intersected.
+     */
     pick(normalized_position, scene, camera) {   
       // Cast a ray through the frustum
       this.raycaster.setFromCamera(normalized_position, camera);
@@ -438,13 +458,12 @@ function main() {
     const nav_menu = document.querySelector('#menu');
     const exit_cross = document.querySelector('#exit_cross');
 
-    // For splash screen
+    // Transistion setups
+        // Exit splash screen
     document.querySelector('#threejs_sec').addEventListener('click', enterExplorationMode, { once: true });
-
-    // Exit detail mode transition setup
+        // Exit detail mode
     document.querySelector('.info_block_return').addEventListener('click', exitDetailMode);
-
-    // For exit focus mode
+        // Exit focus mode
     exit_cross.addEventListener('click', exitFocusMode);
     
     // Takes data and renders onto canvas
