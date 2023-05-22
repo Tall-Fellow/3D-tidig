@@ -244,7 +244,7 @@ class Orbit {
         // Setup read more button
         const loader = new THREE.TextureLoader();
         const btn_material = new THREE.MeshBasicMaterial({
-            map: loader.load('media/read_more5.png'),
+            map: loader.load('media/read_more6.png'),
             side: THREE.FrontSide,
             transparent: true,
         });
@@ -254,14 +254,14 @@ class Orbit {
         btn_material.map.minFilter = THREE.LinearMipmapLinearFilter;
 
         // Button dimensions
-        const btn_width = 0.90;
-        const btn_geometry = new THREE.PlaneGeometry(btn_width, btn_width * 1.0); // Aspect ratio hard-coded (texture height/width)
+        const btn_width = 0.60;
+        const btn_geometry = new THREE.PlaneGeometry(btn_width, btn_width * 0.328); // Aspect ratio hard-coded (texture height/width)
         const btn_mesh = new THREE.Mesh(btn_geometry, btn_material);
         entity.add(btn_mesh);
         
         // Button position
-        const btn_x_offset = -1.1 * (entity.geometry.parameters.width/2 + btn_width/2);
-        const btn_y_offset = -(entity.geometry.parameters.height/2 - btn_geometry.parameters.height - 0.1);
+        const btn_x_offset = -1.15 * (entity.geometry.parameters.width/2 + btn_width/2);
+        const btn_y_offset = -(entity.geometry.parameters.height/2 - btn_geometry.parameters.height - 0.3);
         btn_mesh.position.set(btn_x_offset, btn_y_offset, 0.1);
 
         // Setup highlight border
@@ -483,7 +483,7 @@ function main() {
     camera.lookAt(camera_target.x, camera_target.y, camera_target.z); // Point camera towards target
 
     // Controls setup
-    //const controls = new OrbitControls(camera, renderer.domElement);
+    // const controls = new OrbitControls(camera, renderer.domElement);
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -493,21 +493,21 @@ function main() {
     const color = 0xFFFFFF;
     const intensity = 0.35;
     const light = new THREE.SpotLight(color, intensity);
-    light.position.set(0, 2, 12);
+    light.position.set(0, 2, 30);
     light.target.position.set(0, 0, 0);
-    light.angle = 60*Math.PI/180;
+    light.angle = 20*Math.PI/180;
     light.castShadow = true;
     light.shadow.bias = -0.0003;
-    light.penumbra = 0.00;
-    light.shadow.camera.near = 1;
-    light.shadow.camera.far = 25;
-    light.shadow.camera.zoom = 1.7;
+    light.penumbra = 1.00;
+    light.shadow.camera.near = 15;
+    light.shadow.camera.far = 38;
+    light.shadow.camera.zoom = 1.6;
     
-    const lightHelper = new THREE.SpotLightHelper(light);
-    const cameraHelper = new THREE.CameraHelper(light.shadow.camera);
+    // const lightHelper = new THREE.SpotLightHelper(light);
+    // const cameraHelper = new THREE.CameraHelper(light.shadow.camera);
     
-    //scene.add(lightHelper)
-    //scene.add(cameraHelper);
+    // scene.add(lightHelper)
+    // scene.add(cameraHelper);
     scene.add(light);
     scene.add(light.target);
 
@@ -517,9 +517,9 @@ function main() {
     const light2 = new THREE.HemisphereLight(skyColor, groundColor, intensity2);
     light2.position.set(0, 14, 12);
     
-    const lightHelper2 = new THREE.HemisphereLightHelper(light2);
+    // const lightHelper2 = new THREE.HemisphereLightHelper(light2);
     
-    //scene.add(lightHelper2)
+    // scene.add(lightHelper2)
     scene.add(light2);
 
     // Orientation markers setup - Used for development
@@ -536,8 +536,8 @@ function main() {
         // scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
     }
     
-    // Orbit and cards setup
-    const sphere_geometry = new THREE.SphereGeometry(4, 64, 64);
+    // Orbit, Sphere and cards setup
+    const sphere_geometry = new THREE.SphereGeometry(4, 128, 128);
     const sphere_material = new THREE.MeshPhysicalMaterial({
         clearcoat: 1.00,
         clearcoatRoughness: 0.60,
@@ -553,124 +553,77 @@ function main() {
 
     const cards_data = [
         {
-            path: 'media/Group 121.png', 
-            width: 558, height: 600,
-            title: 'Title 0',
-            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.`
-        },
-        {
             path: 'media/Group 370.png', 
             width: 441, height: 600,
-            title: 'Title 1',
-            content: `<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.</p>
-                
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.</p>`
+            title: 'Projekt',
+            content:
+                `<p>
+                    I Tidig har varje projekt sitt egna hem, gammalt som nytt! På projektkortet 
+                    hittar man allt som är relevant för projektet, från tilldelad personal till fakturastatus. 
+                    Du kan bland annat dela positionen för ett arbete genom en integrerad karta och välja rätt 
+                    fordon för jobbet från er fordonsflotta. Eller sätta antalet timmar som lagt på ett projekt 
+                    samt bifoga relevanta dokument.
+                </p>
+                <p>
+                    Tillsammans ger detta er ett kraftfullt verktyg för alla anställda, oavsett om de jobbar i 
+                    fält eller administrativt. Och med Tidigs mobilplattform är informationen alltid tillgänglig!
+                </p>`
         },
         {
             path: 'media/Group 371.png',
             width: 277, height: 600,
-            title: 'Title 2',
-            content: `<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.</p>
-                
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.</p>`
-        },
-        {
-            path: 'media/Group 373.png',
-            width: 277, height: 600,
-            title: 'Title 3',
-            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.`
+            title: 'Synkad profil',
+            content: 
+                `<p>
+                    Genom att använda er egna företagslogga blir Tidig precis som hemma.
+                </p>`
         },
         {
             path: 'media/Group 439.png',
             width: 933, height: 600,
-            title: 'Title 4',
-            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.`
+            title: 'Projektbrädan',
+            content:
+                `<p>
+                    Mycket på gång? Få en bra överblick över alla era projekt, gamla, aktuella och framtida 
+                    med projektbrädan. Från projektbrädan kan ni enkelt skapa nya projekt och avsätta fordon 
+                    samt personal, allt sparat i historiken såklart!
+                </p>
+                <p>
+                    Håll er uppdaterade om den dagliga driften genom projektbrädan, upptäck krockar, 
+                    schemalägg olika projekt och följ upp hur och var tiden går åt.
+                </p>`
         },
         {
             path: 'media/Group 440.png',
             width: 277, height: 600,
-            title: 'Title 5',
-            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.`
+            title: 'I mobilen och på datorn',
+            content: 
+                `<p>
+                    Ute i fält? Det gör inget, Tidig finns tillgänglig både på datorn och i mobilen. 
+                    Oavsett var du befinner dig så har du tillgång till all den information du behöver 
+                    direkt i mobilen, oavsett befattning och alltid i realtid.
+                </p>
+                <p>
+                    Med meddelandefunktionen kan du diskutera projekt eller lämna in olika förfrågningar 
+                    direkt till projektgruppen eller administrationen. Genom mobilen!
+                </p>`
         },
         {
             path: 'media/Group 443.png',
             width: 278, height: 600,
-            title: 'Direkt kommunikation',
-            content: `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.`
-        },
-        {
-            path: 'media/Group 444.png',
-            width: 277, height: 600,
-            title: 'Title 7',
-            content: `<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.</p>
-                
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                incididunt ut labore et dolore magna aliqua. In arcu cursus euismod quis viverra nibh cras. 
-                Bibendum est ultricies integer quis auctor elit sed. Est lorem ipsum dolor sit amet. 
-                Netus et malesuada fames ac turpis egestas maecenas. Dolor purus non enim praesent elementum 
-                facilisis leo. Quis ipsum suspendisse ultrices gravida. Tristique et egestas quis ipsum 
-                suspendisse ultrices gravida. Aenean euismod elementum nisi quis eleifend quam adipiscing. 
-                Sit amet volutpat consequat mauris nunc congue nisi.</p>`
+            title: 'Person- och fordonshantering',
+            content: 
+                `<p>
+                    Hantera individuell personalstatus med översikt över olika former av anställningar, 
+                    ledighet eller frånvaro och utbildningsnivå. Håll koll på alla anställdas uppgifter och 
+                    status genom personalöversikten. Dela dokument direkt med personal och få det bekräftat 
+                    att de har tagit del av dokumenten.
+                </p>
+                <p>
+                    Med vår fordonshantering registrerar du lätt företagets fordon och får en bra överblick 
+                    på hela flottan. Håll koll på fordons servicestatus, lastkapacitet, kontorstillhörighet, 
+                    m.m. och använd information för att sätta rätt fordon på rätt uppdrag.
+                </p>`
         }
     ];
     
@@ -686,41 +639,42 @@ function main() {
     scene.add(orbit.getSystem());
 
     // GUI setup
-    updateLight();
-    updateCamera();
+    // updateLight();
+    // updateCamera();
 
-    const gui = new GUI();
+    // const gui = new GUI();
     
-    const folder_light = gui.addFolder('Light');
-    folder_light.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
-    folder_light.add(light, 'intensity', 0, 1, 0.05);
-    folder_light.add(new DegRadHelper(light, 'angle'), 'value', 0, 90).name('angle').onChange(updateLight);
-    folder_light.add(light, 'penumbra', 0, 1, 0.01);
-    makeXYZGUI(folder_light, light.position, 'position', updateLight);
-    makeXYZGUI(folder_light, light.target.position, 'target', updateLight);
+    // const folder_light = gui.addFolder('Light');
+    // folder_light.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
+    // folder_light.add(light, 'intensity', 0, 1, 0.05);
+    // folder_light.add(new DegRadHelper(light, 'angle'), 'value', 0, 90).name('angle').onChange(updateLight);
+    // folder_light.add(light, 'penumbra', 0, 1, 0.01);
+    // makeXYZGUI(folder_light, light.position, 'position', updateLight);
+    // makeXYZGUI(folder_light, light.target.position, 'target', updateLight);
     
-    const folder_light2 = gui.addFolder('Light Focus');
-    //folder_light2.addColor(new ColorGUIHelper(light2, 'skyColor'), 'value').name('skyColor');
-    //folder_light2.addColor(new ColorGUIHelper(light2, 'groundColor'), 'value').name('groundColor');
-    folder_light2.add(light2, 'intensity', 0, 1, 0.05);
-    makeXYZGUI(folder_light2, light2.position, 'position', updateLight);
-    //makeXYZGUI(folder_light2, light2.target.position, 'target', updateLight);
+    // const folder_light2 = gui.addFolder('Light Focus');
+    // folder_light2.addColor(new ColorGUIHelper(light2, 'skyColor'), 'value').name('skyColor');
+    // folder_light2.addColor(new ColorGUIHelper(light2, 'groundColor'), 'value').name('groundColor');
+    // folder_light2.add(light2, 'intensity', 0, 1, 0.05);
+    // makeXYZGUI(folder_light2, light2.position, 'position', updateLight);
+    // makeXYZGUI(folder_light2, light2.target.position, 'target', updateLight);
 
-    const folder_shadow = gui.addFolder('Shadow');
-    const minMaxGUIHelper = new MinMaxGUIHelper(light.shadow.camera, 'near', 'far', 0.1);
-    folder_shadow.add(minMaxGUIHelper, 'min', 0.1, 50, 0.1).name('near').onChange(updateCamera);
-    folder_shadow.add(minMaxGUIHelper, 'max', 0.1, 50, 0.1).name('far').onChange(updateCamera);
-    folder_shadow.add(light.shadow.camera, 'zoom', 0.01, 3, 0.01).onChange(updateCamera);
-    folder_shadow.add(light.shadow.mapSize, 'height', 0, 1024, 1);
-    folder_shadow.add(light.shadow.mapSize, 'width', 0, 1024, 1);
-    folder_shadow.add(light.shadow, 'bias', -0.001, 0.001, 0.0001);
+    // const folder_shadow = gui.addFolder('Shadow');
+    // const minMaxGUIHelper = new MinMaxGUIHelper(light.shadow.camera, 'near', 'far', 0.1);
+    // folder_shadow.add(minMaxGUIHelper, 'min', 0.1, 50, 0.1).name('near').onChange(updateCamera);
+    // folder_shadow.add(minMaxGUIHelper, 'max', 0.1, 50, 0.1).name('far').onChange(updateCamera);
+    // folder_shadow.add(light.shadow.camera, 'zoom', 0.01, 3, 0.01).onChange(updateCamera);
+    // folder_shadow.add(light.shadow.mapSize, 'height', 0, 1024, 1);
+    // folder_shadow.add(light.shadow.mapSize, 'width', 0, 1024, 1);
+    // folder_shadow.add(light.shadow, 'bias', -0.001, 0.001, 0.0001);
+    // folder_shadow.add(light.shadow, 'radius', -5, 5, 0.25);
     
-    const folder_sphere = gui.addFolder('Sphere');
-    folder_sphere.addColor(new ColorGUIHelper(sphere_material, 'emissive'), 'value').name('emissive');
-    folder_sphere.add(sphere_material, 'clearcoat', 0, 1, 0.05);
-    folder_sphere.add(sphere_material, 'clearcoatRoughness', 0, 1, 0.05);
-    folder_sphere.add(sphere_material, 'roughness', 0, 1, 0.05);
-    folder_sphere.add(sphere_material, 'metalness', 0, 1, 0.05);
+    // const folder_sphere = gui.addFolder('Sphere');
+    // folder_sphere.addColor(new ColorGUIHelper(sphere_material, 'emissive'), 'value').name('emissive');
+    // folder_sphere.add(sphere_material, 'clearcoat', 0, 1, 0.05);
+    // folder_sphere.add(sphere_material, 'clearcoatRoughness', 0, 1, 0.05);
+    // folder_sphere.add(sphere_material, 'roughness', 0, 1, 0.05);
+    // folder_sphere.add(sphere_material, 'metalness', 0, 1, 0.05);
 
     // const folder_cards = gui.addFolder('Cards');
     // folder_cards.addColor(new ColorGUIHelper(card_material, 'emissive'), 'value').name('emissive');
@@ -800,6 +754,8 @@ function main() {
         media_objs.forEach(media_obj => {
             const material = new THREE.MeshPhongMaterial({
                 map: loader.load(media_obj.path),
+                side: THREE.FrontSide,
+                shadowSide: THREE.FrontSide,
             });
 
             // Combat blurriness at distance
@@ -864,7 +820,7 @@ function main() {
     function updateCamera() {
         // update the light target's matrixWorld because it's needed by the helper
         light.target.updateMatrixWorld();
-        //lightHelper.update();
+        lightHelper.update();
         // update the light's shadow camera's projection matrix
         light.shadow.camera.updateProjectionMatrix();
         // and now update the camera helper we're using to show the light's shadow camera
@@ -874,8 +830,8 @@ function main() {
     // Used for lil.gui
     function updateLight() {
         light.target.updateMatrixWorld();
-        //lightHelper.update();
-        //lightHelper2.update();
+        lightHelper.update();
+        lightHelper2.update();
     }
 
     // Used to remove splash screen and reposition camera
@@ -953,7 +909,7 @@ function main() {
         }
 
         orbit.update(time*0.1, true);
-        //controls.update();
+        // controls.update();
         
         renderer.render(scene, camera);
     }
