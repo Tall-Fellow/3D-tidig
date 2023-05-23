@@ -1,64 +1,64 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
+// import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+// import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
 
 // GUI stuff
-function makeXYZGUI(gui, vector3, name, onChangeFn) {
-    const folder = gui.addFolder(name);
-    folder.add(vector3, 'x', -30, 30).onChange(onChangeFn);
-    folder.add(vector3, 'y', -30, 30).onChange(onChangeFn);
-    folder.add(vector3, 'z', -30, 30).onChange(onChangeFn);
-    folder.open();
-}
+// function makeXYZGUI(gui, vector3, name, onChangeFn) {
+//     const folder = gui.addFolder(name);
+//     folder.add(vector3, 'x', -30, 30).onChange(onChangeFn);
+//     folder.add(vector3, 'y', -30, 30).onChange(onChangeFn);
+//     folder.add(vector3, 'z', -30, 30).onChange(onChangeFn);
+//     folder.open();
+// }
 
-class ColorGUIHelper {
-    constructor(object, prop) {
-      this.object = object;
-      this.prop = prop;
-    }
-    get value() {
-      return `#${this.object[this.prop].getHexString()}`;
-    }
-    set value(hexString) {
-      this.object[this.prop].set(hexString);
-    }
-}
+// class ColorGUIHelper {
+//     constructor(object, prop) {
+//       this.object = object;
+//       this.prop = prop;
+//     }
+//     get value() {
+//       return `#${this.object[this.prop].getHexString()}`;
+//     }
+//     set value(hexString) {
+//       this.object[this.prop].set(hexString);
+//     }
+// }
 
-class DegRadHelper {
-    constructor(obj, prop) {
-      this.obj = obj;
-      this.prop = prop;
-    }
-    get value() {
-      return THREE.MathUtils.radToDeg(this.obj[this.prop]);
-    }
-    set value(v) {
-      this.obj[this.prop] = THREE.MathUtils.degToRad(v);
-    }
-}
+// class DegRadHelper {
+//     constructor(obj, prop) {
+//       this.obj = obj;
+//       this.prop = prop;
+//     }
+//     get value() {
+//       return THREE.MathUtils.radToDeg(this.obj[this.prop]);
+//     }
+//     set value(v) {
+//       this.obj[this.prop] = THREE.MathUtils.degToRad(v);
+//     }
+// }
 
-class MinMaxGUIHelper {
-    constructor(obj, minProp, maxProp, minDif) {
-      this.obj = obj;
-      this.minProp = minProp;
-      this.maxProp = maxProp;
-      this.minDif = minDif;
-    }
-    get min() {
-      return this.obj[this.minProp];
-    }
-    set min(v) {
-      this.obj[this.minProp] = v;
-      this.obj[this.maxProp] = Math.max(this.obj[this.maxProp], v + this.minDif);
-    }
-    get max() {
-      return this.obj[this.maxProp];
-    }
-    set max(v) {
-      this.obj[this.maxProp] = v;
-      this.min = this.min;  // this will call the min setter
-    }
-}
+// class MinMaxGUIHelper {
+//     constructor(obj, minProp, maxProp, minDif) {
+//       this.obj = obj;
+//       this.minProp = minProp;
+//       this.maxProp = maxProp;
+//       this.minDif = minDif;
+//     }
+//     get min() {
+//       return this.obj[this.minProp];
+//     }
+//     set min(v) {
+//       this.obj[this.minProp] = v;
+//       this.obj[this.maxProp] = Math.max(this.obj[this.maxProp], v + this.minDif);
+//     }
+//     get max() {
+//       return this.obj[this.maxProp];
+//     }
+//     set max(v) {
+//       this.obj[this.maxProp] = v;
+//       this.min = this.min;  // this will call the min setter
+//     }
+// }
 // End GUI stuff
 
 /**
@@ -523,18 +523,18 @@ function main() {
     scene.add(light2);
 
     // Orientation markers setup - Used for development
-    {
-        const X_geometry = new THREE.BoxGeometry(100, 0.1, 0.1);
-        const Y_geometry = new THREE.BoxGeometry(0.1, 100, 0.1);
-        const Z_geometry = new THREE.BoxGeometry(0.1, 0.1, 100);
-        const X_material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const Y_material = new THREE.MeshBasicMaterial({ color: 0x08ff00 });
-        const Z_material = new THREE.MeshBasicMaterial({ color: 0x0400ff });
+    // {
+    //     const X_geometry = new THREE.BoxGeometry(100, 0.1, 0.1);
+    //     const Y_geometry = new THREE.BoxGeometry(0.1, 100, 0.1);
+    //     const Z_geometry = new THREE.BoxGeometry(0.1, 0.1, 100);
+    //     const X_material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    //     const Y_material = new THREE.MeshBasicMaterial({ color: 0x08ff00 });
+    //     const Z_material = new THREE.MeshBasicMaterial({ color: 0x0400ff });
         
-        // scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
-        // scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
-        // scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
-    }
+    //     scene.add(new THREE.Mesh(X_geometry, X_material)); // X - red
+    //     scene.add(new THREE.Mesh(Y_geometry, Y_material)); // Y - green
+    //     scene.add(new THREE.Mesh(Z_geometry, Z_material)); // Z - blue
+    // }
     
     // Orbit, Sphere and cards setup
     const sphere_geometry = new THREE.SphereGeometry(4, 128, 128);
@@ -817,22 +817,22 @@ function main() {
     }
 
     // Used for lil.gui
-    function updateCamera() {
-        // update the light target's matrixWorld because it's needed by the helper
-        light.target.updateMatrixWorld();
-        lightHelper.update();
-        // update the light's shadow camera's projection matrix
-        light.shadow.camera.updateProjectionMatrix();
-        // and now update the camera helper we're using to show the light's shadow camera
-        cameraHelper.update();
-    }
+    // function updateCamera() {
+    //     // update the light target's matrixWorld because it's needed by the helper
+    //     light.target.updateMatrixWorld();
+    //     lightHelper.update();
+    //     // update the light's shadow camera's projection matrix
+    //     light.shadow.camera.updateProjectionMatrix();
+    //     // and now update the camera helper we're using to show the light's shadow camera
+    //     cameraHelper.update();
+    // }
 
     // Used for lil.gui
-    function updateLight() {
-        light.target.updateMatrixWorld();
-        lightHelper.update();
-        lightHelper2.update();
-    }
+    // function updateLight() {
+    //     light.target.updateMatrixWorld();
+    //     lightHelper.update();
+    //     lightHelper2.update();
+    // }
 
     // Used to remove splash screen and reposition camera
     function enterExplorationMode() {

@@ -281,11 +281,12 @@ button {
 
 .price_item > span {
     font-weight: 700;
-    padding: 1rem;
+    padding: 0 1rem 1rem 1rem;
 }
 
 .price_item > span ~ span {
     font-weight: inherit;
+    padding: 0 1rem;
 }
 
 .price_item b {
