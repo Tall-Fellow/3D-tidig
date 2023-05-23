@@ -211,6 +211,48 @@ button {
 }
 
 #sec_2d {
-    padding: 5rem;
     color: #333;
+}
+
+#sec_2d div {
+    margin-top: 15vh;
+}
+
+#sec_2d .transition_sec {
+    margin-top: 0;
+}
+
+#sec_2d_intro {
+    margin: 25vh auto !important;
+}
+
+#sec_2d_intro h1 {
+    text-align: center;
+}
+
+#sec_2d_intro p {
+    width: 32rem;
+    max-width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#sec_2d_quote {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0 !important;
+    padding: 4rem;
+    background: #192633;
+    color: #e3e3e3;
+}
+
+#sec_2d_quote img {
+    width: 30%;
+    max-width: 350px;
+    box-shadow: 0px 2px 7px 1px #000000a0;
+}
+
+#sec_2d_quote p {
+    width: 45%;
 }
