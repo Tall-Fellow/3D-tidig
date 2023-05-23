@@ -194,19 +194,16 @@ button {
 
 .trans_1 {
     width: 90vw;
-    margin: 0 auto;
     background-color: #192633;
 }
 
 .trans_2 {
     width: 80vw;
-    margin: 0 auto;
     background-color: #474e55;
 }
 
 .trans_3 {
     width: 70vw;
-    margin: 0 auto;
     background-color: #878787;
 }
 
@@ -299,4 +296,17 @@ button {
     margin-top: 2rem;
     text-align: center;
     font-size: 80%;
+}
+
+#sec_2d_contact {
+    text-align: center;
+    padding: 15vh 0;
+    line-height: 3rem;
+}
+
+#sec_2d_contact span {
+    padding: 1rem 1.5rem;
+    background: #FEDC46;
+    box-shadow: 0px 1px 2px #00000040;
+    font-size: 1.1rem;
 }
