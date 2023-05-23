@@ -145,6 +145,7 @@ button {
     text-align: left;
     font-size: 110%;
     font-weight: bold;
+    line-height: 2rem;
     color: #e3e3e3;
 }
 
