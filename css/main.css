@@ -70,6 +70,7 @@ button {
     transform: translateY(-50%);
     height: 50vh;
     width: 20rem;
+    mask-image: linear-gradient(180deg, #000 5%, #00000085 50%, transparent 95%);
     -webkit-mask-image: linear-gradient(180deg, #000 5%, #00000085 50%, transparent 95%);
 }
 
