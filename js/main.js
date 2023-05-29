@@ -887,6 +887,7 @@ function main() {
     }
 
     function exitFocusMode() {
+        exitDetailMode();
         orbit.setFocus(null);
         exit_cross.style.visibility = 'hidden';
     }
